@@ -1,0 +1,11 @@
+[package]
+name = "sexp"
+version = "0.1.0"
+edition = "2021"
+description = "S-Expression data format"
+[dependencies]
+log = "0.4.19"
+serde = "1.0.16"
+thiserror = "1.0.40"
+[dev-dependencies]
+serde_derive = "1.0.16"

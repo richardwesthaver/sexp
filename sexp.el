@@ -24,8 +24,22 @@
 
 ;;; Code:
 (define-derived-mode sexp-mode lisp-data-mode "S-Expr"
-  "Major mode for editing '.sexp' files."
-  (add-to-list 'auto-mode-alist '("\\.sexp" . sexp-mode)))
+  "Major mode for editing '.sexp' files.")
+
+(add-to-list 'auto-mode-alist '("\\.sexp" . sexp-mode))
+
+;;; OBJ
+(require 'eieio)
+(cl-defgeneric from-sexp (obj sexp)
+  "Update OBJ using values from SEXP.")
+(cl-defgeneric to-sexp (obj)
+  "Return OBJ as a list.")
+(cl-defgeneric read-sexp (obj &optional stream)
+  "Read S-Expressions directly from STREAM (default =
+  `standard-input')and updated OBJ.")
+(cl-defgeneric write-sexp (obj &optional stream comment)
+  "Write S-Expressions directly to STREAM (default =
+  `standard-output') with optional COMMENT.")
 
 (provide 'sexp)
 ;;; sexp.el ends here
