@@ -1,4 +1,5 @@
 use std::{collections::HashMap, io::Write};
+use core::fmt::{self, Display};
 use crate::{Error, Result};
 use serde::ser::Serialize;
 use log::debug;
@@ -9,10 +10,8 @@ pub fn to_writer<W: Write, S: Serialize>(writer: W, value: &S) -> Result<()> {
 }
 
 pub fn to_string<S: Serialize>(value: &S) -> Result<String> {
-    // Create a buffer and serialize our nodes into it
-    let mut writer = Vec::with_capacity(128);
+    let mut writer = Vec::new(); // TODO: with-capacity 128? bench
     to_writer(&mut writer, value)?;
-
     // We then check that the serialized string is the same as what we expect
     let string = String::from_utf8(writer)?;
     Ok(string)
@@ -22,21 +21,30 @@ pub struct Serializer<W>
 where
   W: Write,
 {
-  root: bool,
-  cursor: usize
+  writer: W,
 }
 
 impl<W> Serializer<W>
 where
   W: Write,
 {
-//  fn new(writer: W) -> Self {
-//  }
-  // TODO
+  fn new(writer: W) -> Self {
+  }
 }
 
 impl<'ser, W: Write> serde::ser::Serializer for &'ser mut Serializer<W> {
-  type Ok = ();
+  type Ok = (); // could be usize for bytes written
   type Error = Error;
+  type SerializeSeq = Self;
+  type SerializeTuple = Self;
+  type SerializeTupleStruct = Self;
+  type SerializeTupleVariant = Self;
+  type SerializeMap = Self;
+  type SerializeStruct = Self;
+  type SerializeStructVariant = Self;
   // TODO
+  fn serialize_bool(self, v: bool) -> Result<()> {
+    self.writer.write(&[0]);
+    Ok(())
+  }
 }

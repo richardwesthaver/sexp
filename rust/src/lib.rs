@@ -30,7 +30,7 @@
 //! }
 //! ```
 
-pub mod de;
+// pub mod de;
 pub mod ser;
 
 mod err;

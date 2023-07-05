@@ -1,5 +1,5 @@
 #+TITLE: sexp
-
+#+SETUPFILE: ~/org/clean.theme
 S-Expressions. (WIP)
 
 - [ ] Serde (Rust)
@@ -9,3 +9,167 @@ S-Expressions. (WIP)
 - [ ] Emacs Lisp
 - [ ] Common Lisp
 - [ ] Scheme
+
+* Abstract
+This document defines the SEXP data format. It is intended for
+application and library developers who wish to use S-Expressions as a
+general purpose data format.
+
+Some background is provided before we describe the implementation
+details in full, followed by the reference implementations contained
+in the repository. We conclude with some basic usage examples and
+ideas for the future.
+
+* Introduction
+[[https://en.wikipedia.org/wiki/S-expression][S-expressions]] are tree-like data structures classically defined as:
+1. an atom of the form ~x~, or
+2. an expression of the form ~(x . y)~ where x and y are
+   S-expressions.
+
+In modern times we define an additional shorthand for S-expressions
+with more than 2 members:
+3. ~(x y z)~ may be interpreted as ~(x . (y . (z . NIL)))~ where NIL
+   is the special end-of-list object (alternatively written as ~()~).
+
+S-expressions are used for both data and code in the Lisp family of
+languages, and these are the rules that pretty much every
+implementation has agreed on. S-expressions are in fact one of the
+features that maintains that strong familial bond between Lisps.
+
+You can write executable code:
+#+begin_src emacs-lisp :export code :results silent
+  (defmacro my-data (&rest data)
+    "Print '(my-data ,@DATA)'. This is a macro so that we avoid
+   evaluation of DATA."
+    (print (format "%S" `,(cons 'my-data data))))
+#+end_src
+
+or structured data:
+#+begin_src emacs-lisp :export both
+  (my-data :checksum 12795862 :frame (0 1 1 0 1 0 0 0))
+#+end_src
+
+#+RESULTS:
+: (my-data :checksum 12795862 :frame (0 1 1 0 1 0 0 0))
+
+with the same general structure. S-expressions are a building material
+which exhibits the most fundamental of 'dualities of syntax' as Doug
+Hoyte would call it.
+
+However, of upmost importance is that this duality /only applies to
+Lisps/. S-expressions aren't that special to non-Lispers - they are at
+best a poorly supported and obscure data format and at worst an
+absolute nuisance which is obsolete.
+
+To compensate for this, us Lisp guys like to implement Lisp
+interpreters wherever we go:
+
+"See?" we say, "You can use it to execute code!"
+as we type ~(+ 2 2)~ in the REPL and print ~4~.
+
+Realistically, why do we need this? We already have a general purpose
+language (the one you used to implement your Lisp), we already have a
+portable data format which is supported by our language's standard
+library.[fn:1]
+
+The honest and fair truth is that *languages don't need Lisp*.
+
+However, it may be the case that languages need S-expressions and by
+extension, S-expressions need some additional rules. We will call this
+extended definition *SEXP*.
+
+[fn:1] There are good reasons for needing Lisp, just not in this case.
+
+* Portable Data
+Portable Data is a difficult phrase to define, but we'll take a stab
+at it:
+
+Portable data is data which is structured in such a way as to maximize
+the following properties:
+1. Human-readability
+2. Machine-readability
+3. Size in bytes
+parameterized by:
+1. An interface for data transmission between two or more entities.
+2. The features of the entities themselves.
+
+The formal specification of such data is what we would call a
+/portable data format/.
+
+The canonical example today would likely be JSON - originally
+developed for the Javascript language and ranking high across all
+properties.
+
+** Meta Data
+Under the blanket of Portable Data there is another category, one
+which we will call Meta Data. It is a slight modification of the word
+'Metadata' meaning 'data about data':
+
+Meta Data is Portable Data which is optimized for describing the
+following entities:
+1. Data Types
+2. Data Structures
+
+Another way to think of this interpretation is that with Meta Data we
+want to think as if we are authoring the data manually - we want to be
+able to express as many things as possible. We want to have all the
+power at our fingertips.
+
+Of course, the formal specification of such data is the /meta data
+format/.
+
+One could consider XML to be in this category, which is still popular
+in many Knowledge Management systems. JSON can and often is used for
+this purpose as well.
+
+The point I will argue from here is that neither XML nor JSON have
+found the optimal point at which the ability to describe things is
+maximized. In other words, XML and JSON are not powerful enough.
+* SEXP
+** Prior Art
+The sections preceeding this one were written without doing any
+research really, but I did find a relevant proposal: see
+[[file:draft-rivest-sexp-00.txt][draft-rivest-sexp-00.txt]]. It's the same idea with a different
+approach - the focus is on an exact binary format which is referred to
+as the Canonical representation.
+
+There is also something called [[https://twisted.org/documents/16.1.1/core/specifications/banana.html][Banana]] which is an extensible
+/transport/ protocol for sending and receiving S-expressions. Again
+quite similar - binary format using tagged values.
+
+A C++/C library called [[https://github.com/mjsottile/sfsexp][sfsexp]] is available. It looks quite good
+actually and I'm excited to test it further.
+
+For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
+Rosetta Code]].
+
+** Overview
+*SEXP* is a modernization and transition of previous work done on
+ standardizing S-Expressions into a robust /meta data format/. It
+ consists of the commonly accepted rules of S-Expression described in
+ the introduction (nil is a reserved symbol), a set of well-defined
+ atoms, and a framework for extending or replacing the /reader/ and
+ /writer/ of any given SEXP implementation.
+
+** Atoms
+*** Numbers
+*** Strings
+*** Symbols
+**** Read Symbols
+*** Arrays
+*** Maps
+*** Lists
+** Macros
+Macros are the mechanism by which a SEXP reader and writer are
+extended. They are totally implicit and defined in the host language.
+*** Reader
+Reader Macros occur during deserialization. When the unquoted =#=
+character is encountered, the next character is matched against a
+table of /read symbols/ and the corresponding function is called on
+the remainder of the input or until control is returned to the
+Deserializer.
+*** Writer
+Writer Macros occur during serialization right before returning a
+result. They allow for implementation-dependent transformations of
+SEXPs in memory.
+** TODO Formatter

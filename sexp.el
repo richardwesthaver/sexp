@@ -28,7 +28,7 @@
 
 (add-to-list 'auto-mode-alist '("\\.sexp" . sexp-mode))
 
-;;; OBJ
+;;; OOP
 (require 'eieio)
 (cl-defgeneric from-sexp (obj sexp)
   "Update OBJ using values from SEXP.")
