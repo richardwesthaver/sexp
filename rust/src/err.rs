@@ -1,3 +1,4 @@
+//! err.rs --- SEXP Errors
 use serde::de::Error as DeError;
 use serde::ser::Error as SerError;
 use std::fmt::Display;

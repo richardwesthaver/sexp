@@ -31,11 +31,14 @@
 //! ```
 
 // pub mod de;
-pub mod ser;
+// pub mod ser;
+pub mod tok;
+pub mod ast;
+pub mod macs;
+pub mod fmt;
 
 mod err;
 pub use err::{Error, Result};
 
 // pub use crate::de::{from_reader, from_str, Deserializer};
-// pub use crate::error::Error;
 // pub use crate::ser::{to_string, to_writer, Serializer};
