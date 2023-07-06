@@ -1,6 +1,8 @@
 #+TITLE: sexp
 #+SETUPFILE: ~/org/clean.theme
-S-Expressions. (WIP)
+S-Expressions.
+
++ status :: WIP
 
 - [ ] Serde (Rust)
   - [ ] {lib,tests}.rs
@@ -23,20 +25,33 @@ ideas for the future.
 * Introduction
 [[https://en.wikipedia.org/wiki/S-expression][S-expressions]] are tree-like data structures classically defined as:
 1. an atom of the form ~x~, or
-2. an expression of the form ~(x . y)~ where x and y are
+2. a cons cell of the form ~(x . y)~ where x and y are
    S-expressions.
 
-In modern times we define an additional shorthand for S-expressions
-with more than 2 members:
-3. ~(x y z)~ may be interpreted as ~(x . (y . (z . NIL)))~ where NIL
-   is the special end-of-list object (alternatively written as ~()~).
+These rules define the core properties of S-expressions. An atom is
+left undefined, for us to define ourselves. For convenience, we use
+simple unquoted names or /Symbols/. Thus the name /Symbolic
+Expressions/.
 
-S-expressions are used for both data and code in the Lisp family of
-languages, and these are the rules that pretty much every
-implementation has agreed on. S-expressions are in fact one of the
-features that maintains that strong familial bond between Lisps.
+In modern times we define some additional shorthand rules:
+4. if the /cdr/ of a cons cell is another cons cell, we can omit the
+   dot: ~.~.
+5. An end-of-list atom must be specified (typically ~NIL~, which may
+   also represents the empty cons cell ~()~).
+5. if the /cdr/ of a cons cell is ~NIL~, we can omit the dot and the
+   ~NIL~.
 
-You can write executable code:
+This gives us S-expressions of the following form:
+#+begin_src lisp-data
+  (foo bar baz) ;; === (foo . (bar . (baz . NIL)))
+#+end_src
+
+These are the rules that pretty much every Lisp implementation has
+agreed on. S-expressions are used for both data and code in the Lisp
+family of languages, and they helps maintain that strong familial bond
+between Lisps.
+
+You can write *executable code*:
 #+begin_src emacs-lisp :export code :results silent
   (defmacro my-data (&rest data)
     "Print '(my-data ,@DATA)'. This is a macro so that we avoid
@@ -44,15 +59,12 @@ You can write executable code:
     (print (format "%S" `,(cons 'my-data data))))
 #+end_src
 
-or structured data:
-#+begin_src emacs-lisp :export both
+or *structured data*:
+#+begin_src lisp-data
   (my-data :checksum 12795862 :frame (0 1 1 0 1 0 0 0))
 #+end_src
 
-#+RESULTS:
-: (my-data :checksum 12795862 :frame (0 1 1 0 1 0 0 0))
-
-with the same general structure. S-expressions are a building material
+with the same syntax. S-expressions are a building material
 which exhibits the most fundamental of 'dualities of syntax' as Doug
 Hoyte would call it.
 
@@ -74,7 +86,7 @@ library.[fn:1]
 
 The honest and fair truth is that *languages don't need Lisp*.
 
-However, it may be the case that languages need S-expressions and by
+However, it may be the case that *languages need S-expressions* and by
 extension, S-expressions need some additional rules. We will call this
 extended definition *SEXP*.
 
@@ -97,41 +109,48 @@ The formal specification of such data is what we would call a
 /portable data format/.
 
 The canonical example today would likely be JSON - originally
-developed for the Javascript language and ranking high across all
-properties.
+developed for the Javascript language and ranking reasonably high
+across all properties.
 
-** Meta Data
-Under the blanket of Portable Data there is another category, one
-which we will call Meta Data. It is a slight modification of the word
-'Metadata' meaning 'data about data':
+* Meta Data
+There is another category; one which we will call Meta Data. It is a
+slight modification of the word 'Metadata' meaning 'data about data':
 
-Meta Data is Portable Data which is optimized for describing the
-following entities:
+Meta Data is a portable data format which is optimized for describing
+the following entities:
 1. Data Types
 2. Data Structures
 
 Another way to think of this interpretation is that with Meta Data we
 want to think as if we are authoring the data manually - we want to be
 able to express as many things as possible. We want to have all the
-power at our fingertips.
+power at our fingertips and be able to extend the format as needed.
 
 Of course, the formal specification of such data is the /meta data
 format/.
 
 One could consider XML to be in this category, which is still popular
-in many Knowledge Management systems. JSON can and often is used for
-this purpose as well.
+in many Knowledge Management systems. JSON can be and often is used
+for this purpose as well.
 
 The point I will argue from here is that neither XML nor JSON have
-found the optimal point at which the ability to describe things is
-maximized. In other words, XML and JSON are not powerful enough.
+found the optimal point at which the ability to describe data types
+and structures is maximized. In other words, XML and JSON are not
+powerful enough.
 * SEXP
-** Prior Art
+** Overview
+*SEXP* is an attempt at making S-Expressions into a robust /meta data
+ format/. It consists of the modern rules of S-Expression described in
+ the introduction (nil is defined, we can omit dots), a set of
+ well-defined atoms, a formatter, and a framework for extending the
+ /reader/ and /writer/ of any given SEXP implementation via macros.
+*** Prior Art
 The sections preceeding this one were written without doing any
 research really, but I did find a relevant proposal: see
 [[file:draft-rivest-sexp-00.txt][draft-rivest-sexp-00.txt]]. It's the same idea with a different
 approach - the focus is on an exact binary format which is referred to
-as the Canonical representation.
+as the Canonical representation. There are additional representations
+available through custom printer modes.
 
 There is also something called [[https://twisted.org/documents/16.1.1/core/specifications/banana.html][Banana]] which is an extensible
 /transport/ protocol for sending and receiving S-expressions. Again
@@ -142,34 +161,139 @@ actually and I'm excited to test it further.
 
 For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
 Rosetta Code]].
-
-** Overview
-*SEXP* is a modernization and transition of previous work done on
- standardizing S-Expressions into a robust /meta data format/. It
- consists of the commonly accepted rules of S-Expression described in
- the introduction (nil is a reserved symbol), a set of well-defined
- atoms, and a framework for extending or replacing the /reader/ and
- /writer/ of any given SEXP implementation.
-
 ** Atoms
 *** Numbers
+CLHS
+#+begin_example
+numeric-token  ::=  integer |
+				   ratio   |
+				   float       
+integer        ::=  [sign]
+				   decimal-digit+
+				   decimal-point |
+				   [sign]
+				   digit+      
+ratio          ::=  [sign]
+				   {digit}+
+				   slash
+				   {digit}+    
+float          ::=  [sign]
+				   {decimal-digit}*
+				   decimal-point
+				   {decimal-digit}+
+				   [exponent]  
+                    | 
+				   [sign]
+				   {decimal-digit}+
+				   [decimal-point
+					   {decimal-digit}*]
+				   exponent    
+exponent       ::=  exponent-marker
+				   [sign]
+				   {digit}+    
+                                       
+sign---a sign.                         
+slash---a slash                        
+decimal-point---a dot.                        
+exponent-marker---an exponent marker.                        
+decimal-digit---a digit in radix 10.                        
+digit---a digit in the current input radix.  
+#+end_example
+see also: [[http://clhs.lisp.se/Body/02_caa.htm][potential numbers]]
 *** Strings
+[[http://clhs.lisp.se/Body/02_de.htm][CLHS]] 
+#+begin_example
+  The double-quote is used to begin and end a string. When a
+  double-quote is encountered, characters are read from the input stream
+  and accumulated until another double-quote is encountered. If a single
+  escape character is seen, the single escape character is discarded,
+  the next character is accumulated, and accumulation continues. The
+  accumulated characters up to but not including the matching
+  double-quote are made into a simple string and returned. It is
+  implementation-dependent which attributes of the accumulated
+  characters are removed in this process.
+
+  Examples of the use of the double-quote character are in the next
+  figure.
+
+  "Foo"                      ;A string with three characters in it  
+  ""                         ;An empty string                       
+  "\"APL\\360?\" he cried."  ;A string with twenty characters       
+  "|x| = |-x|"               ;A ten-character string   
+#+end_example
 *** Symbols
+[[http://clhs.lisp.se/Body/02_cd.htm][CLHS]]
+#+begin_example
+  Any token that is not a potential number, does not contain a package
+  marker, and does not consist entirely of dots will always be
+  interpreted as a symbol. Any token that is a potential number but does
+  not fit the number syntax is a reserved token and has an
+  implementation-dependent interpretation. In all other cases, the token
+  is construed to be the name of a symbol.
+#+end_example
 **** Read Symbols
-*** Arrays
-*** Maps
 *** Lists
 ** Macros
 Macros are the mechanism by which a SEXP reader and writer are
-extended. They are totally implicit and defined in the host language.
-*** Reader
+extended. They are driven by individual function lookup tables -
+referred to as the ~readtable~ and ~writetable~ respectively.
+
+Both macro forms receive and return a single S-expression, but reader
+macros are assigned a matching character used for expansion, while
+writer macros only have a boolean attached since they operate on
+entire S-expressions.
+*** Reader Macros
 Reader Macros occur during deserialization. When the unquoted =#=
 character is encountered, the next character is matched against a
 table of /read symbols/ and the corresponding function is called on
 the remainder of the input or until control is returned to the
 Deserializer.
-*** Writer
-Writer Macros occur during serialization right before returning a
-result. They allow for implementation-dependent transformations of
-SEXPs in memory.
-** TODO Formatter
+See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
+*** Writer Macros
+Writer Macros occur during serialization before being passed to the
+finalizer (token2 and format-output). They allow for transformations
+of SEXPs in memory. Note that this does /not/ modify the printed
+representation, only the internal representation.
+
+#+COMMENT: is this possible..
+# One important property of writer macros is that they are
+# recursive. You can write macros which expand into other macros. This
+# is achieved with a new atom type only available in the context of
+# /writer macroexpansion/. Once all branches have been resolved, we are
+# left with our finalized S-expression which can be passed to the
+# Formatter.
+
+The most direct analogy to these macros in CL are actually /compiler
+macros/, as we are effectively defining optimization passes which
+search for and replace specific patterns of code.
+** Formatter
+The final component of SEXP is the formatter. This is the /first/
+transformation made at read-time, and the /last/ at write-time.
+
+Unlike macros, formatters are interfaces which translate streams of
+/tokens/ using functions of the form: ~format-input~ (deserialize,
+raw->tok) and ~format-output~ (serialize, tok->raw).
+- format-input ::
+  given raw data parameterized by the formatter specification, return
+  a sequence of tokens.
+- format-output ::
+  given a sequence of tokens, return raw data parameterized by the
+  formatter specification.
+
+All formatters are mutually exclusive - an S-expression read with a
+specific formatter must be written with the methods of that same
+formatter.
+*** Canonical
+For now, I would like to use UTF-8 Strings as the canonical (default)
+format. This is a re-definition of the term originally attributed to a
+compact binary specification (see prior art). No new lines - only
+spaces.
+*** Pretty
+A pretty-printed UTF-8 string. newline and indentation parameters, etc.
+*** Binary
+A well-defined binary data representation, usually an array of bytes
+(u8).
+*** TODO Compact
+# compressed?
+*** Custom
+User-defined formatter.
