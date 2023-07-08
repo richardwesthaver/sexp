@@ -5,10 +5,7 @@ use crate::{Error, Result};
 use core::fmt::{self, Display};
 use core::num::FpCategory;
 use serde::ser::{self, Serialize};
-use std::{
-  collections::HashMap,
-  io::{self, Write},
-};
+use std::io::{self, Write};
 
 #[inline]
 pub fn to_writer<W: Write, S: ?Sized + Serialize>(
@@ -64,13 +61,13 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
 {
   type Ok = (); // could be usize for bytes written
   type Error = Error;
-  type SerializeSeq = Self;
-  type SerializeTuple = Self;
-  type SerializeTupleStruct = Self;
-  type SerializeTupleVariant = Self;
-  type SerializeMap = Self;
-  type SerializeStruct = Self;
-  type SerializeStructVariant = Self;
+  type SerializeSeq = Seq<'ser, W, F>;
+  type SerializeTuple = Seq<'ser, W, F>;
+  type SerializeTupleStruct = Seq<'ser, W, F>;
+  type SerializeTupleVariant = Seq<'ser, W, F>;
+  type SerializeMap = Seq<'ser, W, F>;
+  type SerializeStruct = Seq<'ser, W, F>;
+  type SerializeStructVariant = Seq<'ser, W, F>;
   // TODO
   fn serialize_bool(self, v: bool) -> Result<()> {
     self
@@ -302,15 +299,9 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
         .formatter
         .end_list(&mut self.writer)
         .map_err(|e| e.into()));
-      Ok(Compound::Map {
-        ser: self,
-        state: State::Empty,
-      })
+      Ok(Seq(self))
     } else {
-      Ok(Compound::Map {
-        ser: self,
-        state: State::First,
-      })
+      Ok(Seq(self))
     }
   }
 
@@ -367,15 +358,9 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
         .formatter
         .end_list(&mut self.writer)
         .map_err(|e| e.into()));
-      Ok(Compound::Map {
-        ser: self,
-        state: State::Empty,
-      })
+      Ok(Seq(self))
     } else {
-      Ok(Compound::Map {
-        ser: self,
-        state: State::First,
-      })
+      Ok(Seq(self))
     }
   }
 
@@ -471,9 +456,9 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
   }
 }
 
-impl<'ser, W: Write, F: Formatter> ser::SerializeSeq
-  for &'ser mut Serializer<W, F>
-{
+pub struct Seq<'a, W: 'a, F: 'a>(&'a mut Serializer<W, F>);
+
+impl<'ser, W: Write, F: Formatter> ser::SerializeSeq for Seq<'ser, W, F> {
   type Ok = ();
   type Error = Error;
   #[inline]
@@ -481,9 +466,162 @@ impl<'ser, W: Write, F: Formatter> ser::SerializeSeq
     &mut self,
     value: &T,
   ) -> Result<()> {
-    //    match self {
-    //
-    //      {
-    Ok(())
+    let ser = &mut self.0;
+    tri!(value.serialize(&mut **ser));
+    ser
+      .formatter
+      .end_list(&mut ser.writer)
+      .map_err(|e| Error::from(e))
+  }
+  #[inline]
+  fn end(self) -> Result<()> {
+    let ser = self.0;
+    ser
+      .formatter
+      .end_list(&mut ser.writer)
+      .map_err(|e| Error::from(e))
+  }
+}
+
+impl<'ser, W: Write, F: Formatter> ser::SerializeTuple for Seq<'ser, W, F> {
+  type Ok = ();
+  type Error = Error;
+  #[inline]
+  fn serialize_element<S: ?Sized + Serialize>(
+    &mut self,
+    value: &S,
+  ) -> Result<()> {
+    ser::SerializeSeq::serialize_element(self, value)
+  }
+  #[inline]
+  fn end(self) -> Result<()> {
+    ser::SerializeSeq::end(self)
+  }
+}
+
+impl<'a, W, F> ser::SerializeTupleStruct for Seq<'a, W, F>
+where
+  W: io::Write,
+  F: Formatter,
+{
+  type Ok = ();
+  type Error = Error;
+
+  #[inline]
+  fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    ser::SerializeSeq::serialize_element(self, value)
+  }
+
+  #[inline]
+  fn end(self) -> Result<()> {
+    ser::SerializeSeq::end(self)
+  }
+}
+
+impl<'a, W, F> ser::SerializeTupleVariant for Seq<'a, W, F>
+where
+  W: io::Write,
+  F: Formatter,
+{
+  type Ok = ();
+  type Error = Error;
+
+  #[inline]
+  fn serialize_field<T>(&mut self, value: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    ser::SerializeSeq::serialize_element(self, value)
+  }
+
+  #[inline]
+  fn end(self) -> Result<()> {
+    let ser = self.0;
+    ser
+      .formatter
+      .end_list(&mut ser.writer)
+      .map_err(|e| Error::from(e))
+  }
+}
+
+impl<'a, W, F> ser::SerializeMap for Seq<'a, W, F>
+where
+  W: io::Write,
+  F: Formatter,
+{
+  type Ok = ();
+  type Error = Error;
+
+  #[inline]
+  fn serialize_key<T>(&mut self, key: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    let ser = &mut self.0;
+    key.serialize(&mut **ser)
+  }
+
+  #[inline]
+  fn serialize_value<T>(&mut self, value: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    let ser = &mut self.0;
+    value.serialize(&mut **ser)
+  }
+
+  #[inline]
+  fn end(self) -> Result<()> {
+    self
+      .0
+      .formatter
+      .end_list(&mut self.0.writer)
+      .map_err(|e| Error::from(e))
+  }
+}
+
+impl<'a, W, F> ser::SerializeStruct for Seq<'a, W, F>
+where
+  W: io::Write,
+  F: Formatter,
+{
+  type Ok = ();
+  type Error = Error;
+
+  #[inline]
+  fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    ser::SerializeMap::serialize_entry(self, key, value)
+  }
+
+  #[inline]
+  fn end(self) -> Result<()> {
+    ser::SerializeMap::end(self)
+  }
+}
+
+impl<'a, W, F> ser::SerializeStructVariant for Seq<'a, W, F>
+where
+  W: io::Write,
+  F: Formatter,
+{
+  type Ok = ();
+  type Error = Error;
+
+  #[inline]
+  fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<()>
+  where
+    T: ?Sized + Serialize,
+  {
+    ser::SerializeStruct::serialize_field(self, key, value)
+  }
+  #[inline]
+  fn end(self) -> Result<()> {
+    unimplemented!()
   }
 }

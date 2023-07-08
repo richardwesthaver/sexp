@@ -19,6 +19,7 @@ pub type Form = Vec<Token>;
 pub enum Token {
   ListStart,
   ListEnd,
+  Dot,
   Sym(String),
   Str(String),
   Num(String),
@@ -26,9 +27,10 @@ pub enum Token {
 
 impl Display for Token {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match *self {
+    match self {
       Token::ListStart => f.write_str("( "),
       Token::ListEnd => f.write_str(")\n"),
+      Token::Dot => f.write_str("."),
       Token::Sym(s) => f.write_str(&format!("{} ", &s)),
       Token::Str(s) => f.write_str(&format!("\"{}\" ", &s)),
       Token::Num(n) => Display::fmt(&n, f),
@@ -42,6 +44,7 @@ impl FromStr for Token {
     match s {
       "(" => Ok(Token::ListStart),
       ")" => Ok(Token::ListEnd),
+      "." => Ok(Token::Dot),
       s => {
         if s.starts_with("\"") {
           Ok(Token::Str(s.trim_matches('"').to_owned()))
@@ -75,6 +78,7 @@ impl PartialEq for PotNum {
       (Self::PosInt(a), Self::PosInt(b)) => a == b,
       (Self::NegInt(a), Self::NegInt(b)) => a == b,
       (Self::Float(a), Self::Float(b)) => a == b,
+      _ => false,
     }
   }
 }

@@ -3,15 +3,26 @@
 #+INFOJS_OPT: view:info toc:nil
 * Status
 + state :: WIP
-
-- [ ] Serde (Rust)
-  - [ ] {lib,tests}.rs
-    - [ ] ser
-    - [ ] de
-- [ ] Emacs Lisp
-- [ ] Common Lisp
-- [ ] Scheme
-
++ todo ::
+  - [-] Rust
+    - [-] {lib,tests}.rs
+      - [X] ser
+      - [ ] de
+      - [ ] tok
+      - [ ] ast
+      - [ ] fmt
+      - [ ] macs
+  - [ ] Emacs Lisp
+  - [ ] Common Lisp
++ RFCs ::
+  - do we want un/back-quote? =,@= splicing would probably be part of
+    unquote specification.
+    - pros
+      - embed objects in any lexical env
+      - extends capabilities of read/write macros
+    - cons
+      - additional tokens/ast types
+      - additional formatter/encoder methods
 * Abstract
 This document defines the SEXP data format. It is intended for
 application and library developers who wish to use S-Expressions as a
@@ -27,6 +38,8 @@ ideas for the future.
 1. an atom of the form ~x~, or
 2. a cons cell of the form ~(x . y)~ where x and y are
    S-expressions.
+
+A /cons cell/ is simply an ordered pair.
 
 These rules define the core properties of S-expressions. An atom is
 left undefined, for us to define ourselves. For convenience, we use
@@ -51,7 +64,7 @@ agreed on. S-expressions are used for both data and code in the Lisp
 family of languages, and they helps maintain that strong familial bond
 between Lisps.
 
-You can write *executable code*:
+You can write *executable code*, like this emacs-lisp macro:
 #+begin_src emacs-lisp :export code :results silent
   (defmacro my-data (&rest data)
     "Print '(my-data ,@DATA)'. This is a macro so that we avoid
@@ -59,14 +72,13 @@ You can write *executable code*:
     (print (format "%S" `,(cons 'my-data data))))
 #+end_src
 
-or *structured data*:
+or *structured data*, in this case a checksumed list of bits:
 #+begin_src lisp-data
   (my-data :checksum 12795862 :frame (0 1 1 0 1 0 0 0))
 #+end_src
 
-with the same syntax. S-expressions are a building material
-which exhibits the most fundamental of 'dualities of syntax' as Doug
-Hoyte would call it.
+with the same syntax. S-expressions are a building material which
+exhibits the most fundamental of 'dualities of syntax'.
 
 However, of upmost importance is that this duality /only applies to
 Lisps/. S-expressions aren't that special to non-Lispers - they are at
@@ -76,8 +88,8 @@ absolute nuisance which is obsolete.
 To compensate for this, us Lisp guys like to implement Lisp
 interpreters wherever we go:
 
-"See?" we say, "You can use it to execute code!"
-as we type ~(+ 2 2)~ in the REPL and print ~4~.
+"See?" we say, "You can use it to execute code!"  as we type ~(+ 2 2)~
+in the REPL and print ~4~.
 
 Realistically, why do we need this? We already have a general purpose
 language (the one you used to implement your Lisp), we already have a
@@ -168,17 +180,20 @@ demonstrated in the implementation section. SEXPs are intended to be
 read and written from a stream of bytes, so it makes sense to have as
 low-level of a representation of individual bytes as possible.
 *** ListStart
-The list starting character, typically =(=
+The list starting character is typically =(=.
 *** ListEnd
-The List ending character, typically =)=
+The List ending character is typically =)=.
 *** Dot
-A single dot character, =.=
+A single dot character, =.=. This is a special character used to
+separate the car and cdr of a cons cell.
 *** COMMENT SlotSymbol
-A character which designates the start of a 'slot' symbol
+A character which designates the start of a 'slot' symbol, typically
+=:=.
 *** COMMENT ReaderSymbol
-A character which designates that the next character is a 'read' symbol
+A character which designates that the next character is a 'read'
+symbol, typically =#=.
 *** Symbol
-Just a plain unquoted string, =foo=
+Just a plain unquoted string, such as =foo=. 
 *** String
 A string which prints with quotes, ="foo"=
 *** Number
@@ -319,7 +334,11 @@ A well-defined binary data representation, usually an array of bytes
 *** Custom
 User-defined formatter.
 ** Test Suite
+This section provides a test suite which can be used for verifying and
+benchmarking an implementation as shown in the reference
+implementation.
 *** lexer
+SEXP implementations are required to 
 *** parser
 *** serde
 * Reference Implementation
