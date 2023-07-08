@@ -1,6 +1,6 @@
 //! tests/de.rs --- DE
-use sexp::from_str;
 use serde_derive::Deserialize;
+use sexp::from_str;
 
 #[test]
 fn de_struct() {

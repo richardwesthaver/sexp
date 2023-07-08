@@ -7,7 +7,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
   #[error("expected token: {token}, found: {found})")]
-  UnexpectedToken {token: String, found: String},
+  UnexpectedToken { token: String, found: String },
   #[error("custom: {field}")]
   Custom { field: String },
   #[error("unsupported operation: '{operation}'")]

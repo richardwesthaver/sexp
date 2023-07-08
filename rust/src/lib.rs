@@ -30,15 +30,24 @@
 //! }
 //! ```
 
-// pub mod de;
-// pub mod ser;
-pub mod tok;
-pub mod ast;
-pub mod macs;
-pub mod fmt;
-
 mod err;
 pub use err::{Error, Result};
+
+macro_rules! tri {
+  ($e:expr $(,)?) => {
+    match $e {
+      core::result::Result::Ok(val) => val,
+      core::result::Result::Err(err) => return core::result::Result::Err(err),
+    }
+  };
+}
+
+// pub mod de;
+pub mod ast;
+pub mod fmt;
+pub mod macs;
+pub mod ser;
+pub mod tok;
 
 // pub use crate::de::{from_reader, from_str, Deserializer};
 // pub use crate::ser::{to_string, to_writer, Serializer};

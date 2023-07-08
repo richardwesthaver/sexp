@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 description = "S-Expression data format"
 [dependencies]
+itoa = "1.0.8"
 log = "0.4.19"
+ryu = "1.0.14"
 serde = "1.0.16"
 thiserror = "1.0.40"
 [dev-dependencies]

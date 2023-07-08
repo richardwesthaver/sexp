@@ -1,6 +1,6 @@
+use serde_derive::Serialize;
 /// tests/ser.rs --- SER
 use sexp::to_string;
-use serde_derive::Serialize;
 #[test]
 fn ser_struct() {
   #[derive(Serialize)]
