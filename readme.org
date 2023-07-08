@@ -1,7 +1,6 @@
 #+TITLE: sexp
 #+SETUPFILE: ~/org/clean.theme
 #+INFOJS_OPT: view:info toc:nil
-S-Expressions.
 * Status
 + state :: WIP
 
@@ -143,8 +142,9 @@ powerful enough.
 *SEXP* is an attempt at making S-Expressions into a robust /meta data
  format/. It consists of the modern rules of S-Expression described in
  the introduction (nil is defined, we can omit dots), a set of
- well-defined atoms, a formatter, and a framework for extending the
- /reader/ and /writer/ of any given SEXP implementation via macros.
+ well-defined tokens and atoms, a list type, a formatter, and a
+ framework for extending the /reader/ and /writer/ of any given SEXP
+ implementation via macros.
 *** Prior Art
 The sections preceeding this one were written without doing any
 research really, but I did find a relevant proposal: see
@@ -162,9 +162,32 @@ actually and I'm excited to test it further.
 
 For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
 Rosetta Code]].
+** Tokens
+We explicitly define tokens for added flexibility. Their usage is
+demonstrated in the implementation section. SEXPs are intended to be
+read and written from a stream of bytes, so it makes sense to have as
+low-level of a representation of individual bytes as possible.
+*** ListStart
+The list starting character, typically =(=
+*** ListEnd
+The List ending character, typically =)=
+*** Dot
+A single dot character, =.=
+*** COMMENT SlotSymbol
+A character which designates the start of a 'slot' symbol
+*** COMMENT ReaderSymbol
+A character which designates that the next character is a 'read' symbol
+*** Symbol
+Just a plain unquoted string, =foo=
+*** String
+A string which prints with quotes, ="foo"=
+*** Number
+A string which contains numeric characters (Potential Number)
 ** Atoms
+Atoms are the indivisible units of a SEXP -- they are used as the
+internal representation of our data which is manipulated in the
+structures supported by a given implementation.
 *** Numbers
-CLHS
 #+begin_example
 numeric-token  ::=  integer |
 				   ratio   |
@@ -232,29 +255,27 @@ see also: [[http://clhs.lisp.se/Body/02_caa.htm][potential numbers]]
   implementation-dependent interpretation. In all other cases, the token
   is construed to be the name of a symbol.
 #+end_example
-**** Read Symbols
-*** Lists
+** Lists
 ** Macros
 Macros are the mechanism by which a SEXP reader and writer are
 extended. They are driven by individual function lookup tables -
-referred to as the ~readtable~ and ~writetable~ respectively.
+referred to as the ~readtable~ and ~writetable~ respectively. These
+tables are indexed separately but store the same core 'Macro' type.
 
-Both macro forms receive and return a single S-expression, but reader
-macros are assigned a matching character used for expansion, while
-writer macros only have a boolean attached since they operate on
-entire S-expressions.
+Macros receive and return a single S-Expression object, but are used
+by the parser in different ways.
+
 *** Reader Macros
-Reader Macros occur during deserialization. When the unquoted =#=
+Reader Macros occur during /deserialization/. When the unquoted =#=
 character is encountered, the next character is matched against a
-table of /read symbols/ and the corresponding function is called on
-the remainder of the input or until control is returned to the
-Deserializer.
-See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
+hashtable of /read symbols/ and the corresponding function is called
+on the remainder of the input or until control is returned to the
+Deserializer.  See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
 *** Writer Macros
-Writer Macros occur during serialization before being passed to the
-finalizer (token2 and format-output). They allow for transformations
-of SEXPs in memory. Note that this does /not/ modify the printed
-representation, only the internal representation.
+Writer Macros occur during /serialization/ before being passed to the
+output formatter/writer. They allow for transformations of SEXPs in
+memory. Note that this does /not/ modify the printed (formatted) representation,
+only the internal representation.
 
 #+COMMENT: is this possible..
 # One important property of writer macros is that they are
@@ -263,7 +284,6 @@ representation, only the internal representation.
 # /writer macroexpansion/. Once all branches have been resolved, we are
 # left with our finalized S-expression which can be passed to the
 # Formatter.
-
 The most direct analogy to these macros in CL are actually /compiler
 macros/, as we are effectively defining optimization passes which
 search for and replace specific patterns of code.
@@ -294,7 +314,15 @@ A pretty-printed UTF-8 string. newline and indentation parameters, etc.
 *** Binary
 A well-defined binary data representation, usually an array of bytes
 (u8).
-*** TODO Compact
+*** COMMENT Compact
 # compressed?
 *** Custom
 User-defined formatter.
+** Test Suite
+*** lexer
+*** parser
+*** serde
+* Reference Implementation
+The chosen reference implementation is located in the =rust= folder of
+this project. It leverages the serde ecosystem and includes a full
+test-suite as specified in the previous section.

@@ -46,7 +46,7 @@ impl FromStr for Token {
         if s.starts_with("\"") {
           Ok(Token::Str(s.trim_matches('"').to_owned()))
         } else if s.chars().next().unwrap().is_numeric() {
-          Ok(Token::Num(s.parse().unwrap()))
+          Ok(Token::Num(s.to_owned()))
         } else {
           Ok(Token::Sym(s.to_owned()))
         }

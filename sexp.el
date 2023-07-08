@@ -30,6 +30,7 @@
 
 ;;; OOP
 (require 'eieio)
+
 (cl-defgeneric from-sexp (obj sexp)
   "Update OBJ using values from SEXP.")
 (cl-defgeneric to-sexp (obj)
