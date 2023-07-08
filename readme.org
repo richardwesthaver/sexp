@@ -1,8 +1,9 @@
 #+TITLE: sexp
 #+SETUPFILE: ~/org/clean.theme
+#+INFOJS_OPT: view:info toc:nil
 S-Expressions.
-
-+ status :: WIP
+* Status
++ state :: WIP
 
 - [ ] Serde (Rust)
   - [ ] {lib,tests}.rs
