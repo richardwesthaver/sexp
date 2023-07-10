@@ -14,7 +14,7 @@
       - [ ] macs
   - [ ] Emacs Lisp
   - [ ] Common Lisp
-+ RFCs ::
++ RFC ::
   - do we want un/back-quote? =,@= splicing would probably be part of
     unquote specification.
     - pros
@@ -337,13 +337,17 @@ User-defined formatter.
 This section provides a test suite which can be used for verifying and
 benchmarking an implementation as shown in the reference
 implementation.
-
-*** lexer
+- test data ::
+  - =./tests.sexp=
+*** token tests
 SEXP implementations are required to convert data from arbitrary
-streams into Tokens in a process called lexing.
-*** parser
-*** serde
-* Reference Implementation
-The chosen reference implementation is located in the =rust= folder of
-this project. It leverages the serde ecosystem and includes a full
+streams into Tokens.
+*** ast tests
+*** serialization tests
+*** deserialization tests
+*** formatter tests
+*** macro tests
+* TODO Reference Implementation
+The reference implementation is located in the =rust= folder of this
+project. It leverages the serde ecosystem and includes a full
 test-suite as specified in the previous section.

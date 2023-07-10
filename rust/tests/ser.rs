@@ -1,7 +1,6 @@
 /// tests/ser.rs --- SER
-#[allow(non_camel_case_types)]
 use serde_derive::Serialize;
-use sexp::{to_string, to_vec, to_writer, Sexp};
+use sexp::{to_string, to_vec, to_writer};
 use std::io::BufWriter;
 #[test]
 fn ser_struct() {
@@ -63,3 +62,7 @@ fn ser_enum() {
   assert_eq!(std::str::from_utf8(&buf).unwrap(), expected);
   assert_eq!(std::str::from_utf8(&to_vec(&s).unwrap()).unwrap(), expected);
 }
+
+//  TODO 2023-07-09
+#[test]
+fn ser_ast() {}

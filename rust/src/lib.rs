@@ -7,7 +7,7 @@
 
 //! ```rust
 //! use serde_derive::{Deserialize, Serialize};
-//! use sexp::{from_str, to_string};
+//! use sexp::to_string; // from_str
 //!
 //! #[derive(Debug, Serialize, Deserialize, PartialEq)]
 //! struct Item {
@@ -22,10 +22,10 @@
 //!         source: "Store".to_string(),
 //!     };
 //!
-//!     let item: Item = from_str(src).unwrap();
-//!     assert_eq!(item, should_be);
+//!     // let item: Item = from_str(src).unwrap();
+//!     // assert_eq!(item, should_be);
 //!
-//!     let reserialized_item = to_string(&item).unwrap();
+//!     let reserialized_item = to_string(&should_be).unwrap();
 //!     assert_eq!(src, reserialized_item);
 //! }
 //! ```
@@ -52,5 +52,6 @@ pub mod tok;
 // pub use crate::de::{from_reader, from_str, Deserializer};
 pub use ast::Sexp;
 pub use fmt::{CanonicalFormatter, Formatter};
+pub use macs::{Macro, MacroObject, ReadTable, WriteTable};
 pub use ser::{to_string, to_vec, to_writer, Serializer};
 pub use tok::Token;

@@ -45,3 +45,6 @@
 //   let expected = E::Struct { a: 1 };
 //   assert_eq!(expected, from_str(j).unwrap());
 // }
+
+#[test]
+fn de_ast() {}
