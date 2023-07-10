@@ -29,9 +29,14 @@
 //!     assert_eq!(src, reserialized_item);
 //! }
 //! ```
+#![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
 
 mod err;
+#[doc(inline)]
 pub use err::{Error, Result};
+
+mod io;
 
 macro_rules! tri {
   ($e:expr $(,)?) => {
@@ -50,10 +55,15 @@ pub mod ser;
 pub mod tok;
 
 // pub use crate::de::{from_reader, from_str, Deserializer};
+#[doc(inline)]
 pub use ast::Sexp;
+#[doc(inline)]
 pub use fmt::{CanonicalFormatter, Formatter};
+#[doc(inline)]
 pub use macs::{Macro, MacroObject, ReadTable, WriteTable};
+#[doc(inline)]
 pub use ser::{to_string, to_vec, to_writer, Serializer};
+#[doc(inline)]
 pub use tok::Token;
 
 #[macro_export(local_inner_macros)]
