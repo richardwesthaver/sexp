@@ -2,7 +2,7 @@
 use crate::tok::CharEscape;
 use std::io::{self, Write}; //TODO : Read
 
-fn indent<W: ?Sized + io::Write>(
+pub fn indent<W: ?Sized + io::Write>(
   wr: &mut W,
   n: usize,
   s: &[u8],

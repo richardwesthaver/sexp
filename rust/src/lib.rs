@@ -55,3 +55,62 @@ pub use fmt::{CanonicalFormatter, Formatter};
 pub use macs::{Macro, MacroObject, ReadTable, WriteTable};
 pub use ser::{to_string, to_vec, to_writer, Serializer};
 pub use tok::Token;
+
+#[macro_export(local_inner_macros)]
+macro_rules! sexp {
+  ($($sexp:tt)+) => {
+    _sexp!($($sexp)+)
+  };
+}
+
+// may not be necessary
+#[macro_export(local_inner_macros)]
+#[doc(hidden)]
+macro_rules! _sexp {
+  (@array [$($elems:expr),*]) => {
+    sexp_vec![$($elems),*]
+  };
+  // Next element is `nil`.
+  (@array [$($elems:expr,)*] nil $($rest:tt)*) => {
+    _sexp!(@array [$($elems,)* _sexp!(nil)] $($rest)*)
+  };
+  // Unexpected token after most recent element.
+  (@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
+    sexp_unexpected!($unexpected)
+  };
+
+  //////////////////////////////////////////////////////////////////////////
+  // TT muncher for parsing the inside of a object (:foo "bar"). Each entry is
+  // inserted into the given map variable.
+  //
+  // Must be invoked as: _sexp!(@object $map () ($($tt)*) ($($tt)*))
+  //
+  // We require two copies of the input tokens so that we can match on one
+  // copy and trigger errors on the other copy.
+  //////////////////////////////////////////////////////////////////////////
+
+  // Done.
+  (@object $object:ident () () ()) => {};
+
+  // Insert the current entry.
+  (@object $object:ident ( [$($key:tt)+] ($value:expr) ) $($rest:tt)*) => {
+    let _ = $object.insert(($($key)+).into(), $value);
+    _sexp!(@object $object () ($($rest)*) ($($rest)*));
+    };
+
+    // Current entry followed by unexpected token.
+    (@object $object:ident [$($key:tt)+] ($value:expr) $unexpected:tt $($rest:tt)*) => {
+        sexp_unexpected!($unexpected);
+    };
+
+    // Insert the last entry
+    (@object $object:ident [$($key:tt)+] ($value:expr)) => {
+        let _ = $object.insert(($($key)+).into(), $value);
+    };
+
+    // Next value is `nil`.
+    (@object $object:ident ($($key:tt)+) (nil $($rest:tt)*) $copy:tt) => {
+        json_internal!(@object $object [$($key)+] (json_internal!(null)) $($rest)*);
+    };
+
+}

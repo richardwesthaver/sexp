@@ -15,7 +15,7 @@ pub type Form = Vec<Token>;
 
 /// Token types collected from the output of a type which implements
 /// Read+Format.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
   ListStart,
   ListEnd,
@@ -56,11 +56,6 @@ impl FromStr for Token {
       }
     }
   }
-}
-// Convert u8 to digit.
-#[inline]
-pub(crate) fn to_digit(c: u8) -> Option<u32> {
-  (c as char).to_digit(10)
 }
 
 /// Potential Number
@@ -235,7 +230,7 @@ impl Num {
     }
   }
 
-  pub(crate) fn as_f32(&self) -> Option<f32> {
+  pub fn as_f32(&self) -> Option<f32> {
     // #[cfg(not(feature = "arbitrary_precision"))]
     match self.0 {
       PotNum::PosInt(n) => Some(n as f32),
@@ -246,7 +241,7 @@ impl Num {
     // self.n.parse::<f32>().ok().filter(|float| float.is_finite())
   }
 
-  pub(crate) fn from_f32(f: f32) -> Option<Num> {
+  pub fn from_f32(f: f32) -> Option<Num> {
     if f.is_finite() {
       let n = PotNum::Float(f as f64);
       // {
@@ -451,7 +446,7 @@ impl_from_signed!(i8, i16, i32, i64, isize);
 
 impl Num {
   #[cold]
-  pub(crate) fn unexpected(&self) -> Unexpected {
+  pub fn unexpected(&self) -> Unexpected {
     match self.0 {
       PotNum::PosInt(u) => Unexpected::Unsigned(u),
       PotNum::NegInt(i) => Unexpected::Signed(i),

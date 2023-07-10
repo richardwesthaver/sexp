@@ -23,6 +23,8 @@
     - cons
       - additional tokens/ast types
       - additional formatter/encoder methods
+  - should the reference impl (rust) enum =Sexp= (valid ast types) be
+    renamed? maybe to =Form=? something else?
 * Abstract
 This document defines the SEXP data format. It is intended for
 application and library developers who wish to use S-Expressions as a
