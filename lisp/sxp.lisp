@@ -1,5 +1,5 @@
 ;;; sexp.lisp --- SEXP
-(defpackage :sexp
+(defpackage :sxp
   (:use :cl))
 
-(in-package :sexp)
+(in-package :sxp)

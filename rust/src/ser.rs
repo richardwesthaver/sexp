@@ -1,4 +1,4 @@
-//! ser.rs --- SEXP Serializer
+//! ser.rs --- SXP Serializer
 use crate::fmt::{CanonicalFormatter, Formatter};
 use crate::tok::{format_escaped_str, format_escaped_str_contents};
 use crate::{Error, Result};
@@ -16,7 +16,7 @@ pub fn to_writer<W: Write, S: ?Sized + Serialize>(
   value.serialize(&mut ser)
 }
 
-/// Serialize the given data structure as a canonical SEXP byte vector.
+/// Serialize the given data structure as a canonical SXP byte vector.
 #[inline]
 pub fn to_vec<S: ?Sized + Serialize>(value: &S) -> Result<Vec<u8>> {
   let mut writer = Vec::with_capacity(128);

@@ -1,4 +1,4 @@
-//! tok.rs --- SEXP Tokens
+//! tok.rs --- SXP Tokens
 
 use crate::{fmt::Formatter, Error};
 /// all possible Tokens. Note that we do not explicitly declare a
@@ -299,7 +299,7 @@ impl<'de> Deserialize<'de> for Num {
     impl<'de> Visitor<'de> for NumVisitor {
       type Value = Num;
       fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a SEXP number")
+        formatter.write_str("a SXP number")
       }
       #[inline]
       fn visit_i64<E>(self, value: i64) -> Result<Num, E> {
@@ -312,7 +312,7 @@ impl<'de> Deserialize<'de> for Num {
       #[inline]
       fn visit_f64<E: de::Error>(self, value: f64) -> Result<Num, E> {
         Num::from_f64(value)
-          .ok_or_else(|| de::Error::custom("not a SEXP number"))
+          .ok_or_else(|| de::Error::custom("not a SXP number"))
       }
     }
     deserializer.deserialize_any(NumVisitor)
@@ -556,7 +556,7 @@ const UU: u8 = b'u'; // \x00...\x1F except the ones above
 const __: u8 = 0;
 
 // Lookup table of escape sequences. A value of b'x' at index i means that byte
-// i is escaped as "\x" in SEXP. A value of 0 means that byte i is not escaped.
+// i is escaped as "\x" in SXP. A value of 0 means that byte i is not escaped.
 static ESCAPE: [u8; 256] = [
   //   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
   UU, UU, UU, UU, UU, UU, UU, UU, BB, TT, NN, UU, FF, RR, UU, UU, // 0

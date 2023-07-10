@@ -1,8 +1,8 @@
 [package]
-name = "sexp"
+name = "sxp"
 version = "0.1.0"
 edition = "2021"
-description = "S-Expression data format"
+description = "S-eXPressions"
 [dependencies]
 itoa = "1.0.8"
 log = "0.4.19"

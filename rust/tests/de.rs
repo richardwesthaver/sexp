@@ -1,7 +1,7 @@
 //! tests/de.rs --- DE
 //  TODO 2023-07-09
 // use serde_derive::Deserialize;
-// use sexp::from_str;
+// use sxp::from_str;
 
 // #[test]
 // fn de_struct() {

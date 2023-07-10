@@ -1,4 +1,4 @@
-;;; sexp.el --- S-Expression Mode -*- lexical-binding: t; -*-
+;;; sxp.el --- S-Expression Mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2023  ellis
 
@@ -20,41 +20,41 @@
 
 ;;; Commentary:
 
-;; Emacs Support for S-Expression files (.sexp).
+;; Emacs Support for S-Expression files (.sxp).
 
 ;;; Code:
-(define-derived-mode sexp-mode lisp-data-mode "S-Expr"
-  "Major mode for editing '.sexp' files.")
+(define-derived-mode sxp-mode lisp-data-mode "S-Expr"
+  "Major mode for editing '.sxp' files.")
 
-(add-to-list 'auto-mode-alist '("\\.sexp" . sexp-mode))
+(add-to-list 'auto-mode-alist '("\\.sxp" . sxp-mode))
 
 ;;; OOP
 (require 'eieio)
 
-(cl-defgeneric from-sexp (obj sexp)
-  "Update OBJ using values from SEXP.")
-(cl-defgeneric to-sexp (obj)
+(cl-defgeneric from-sxp (obj sxp)
+  "Update OBJ using values from SXP.")
+(cl-defgeneric to-sxp (obj)
   "Return OBJ as a list.")
-(cl-defgeneric read-sexp (obj &optional stream)
+(cl-defgeneric read-sxp (obj &optional stream)
   "Read S-Expressions directly from STREAM (default =
   `standard-input')and updated OBJ.")
-(cl-defgeneric write-sexp (obj &optional stream comment)
+(cl-defgeneric write-sxp (obj &optional stream comment)
   "Write S-Expressions directly to STREAM (default =
   `standard-output') with optional COMMENT.")
 
 (with-eval-after-load "ert"
-  (ert-deftest sexp:read()
+  (ert-deftest sxp:read()
     (should t))
-  (ert-deftest sexp:write()
+  (ert-deftest sxp:write()
     (should t))
-  (ert-deftest sexp:from()
+  (ert-deftest sxp:from()
     (should t))
-  (ert-deftest sexp:to()
+  (ert-deftest sxp:to()
     (should t))
-  (ert-deftest sexp:fmt()
+  (ert-deftest sxp:fmt()
     (should t))
-  (ert-deftest sexp:mode()
+  (ert-deftest sxp:mode()
     (should t)))
 
-(provide 'sexp)
-;;; sexp.el ends here
+(provide 'sxp)
+;;; sxp.el ends here

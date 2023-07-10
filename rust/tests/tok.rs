@@ -1,5 +1,5 @@
-use sexp::Token;
 use std::str::FromStr;
+use sxp::Token;
 #[test]
 fn list_start_token() {
   assert_eq!(Token::from_str("(").unwrap(), Token::ListStart)

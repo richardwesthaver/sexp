@@ -1,5 +1,5 @@
-use sexp::{CanonicalFormatter, Formatter};
 use std::io::BufWriter;
+use sxp::{CanonicalFormatter, Formatter};
 pub struct TestFormatter;
 impl Formatter for TestFormatter {}
 

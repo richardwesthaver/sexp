@@ -1,4 +1,4 @@
-#+TITLE: sexp
+#+TITLE: sxp
 #+SETUPFILE: ~/org/clean.theme
 #+INFOJS_OPT: view:info toc:nil
 * Status
@@ -12,10 +12,11 @@
       - [ ] ast
       - [ ] fmt
       - [ ] macs
-  - [ ] Emacs Lisp
-  - [ ] Common Lisp
+  - [-] Python
+  - [-] Emacs Lisp
+  - [-] Common Lisp
 + RFC ::
-  - do we want un/back-quote? =,@= splicing would probably be part of
+  - [?] do we want un/back-quote? =,@= splicing would probably be part of
     unquote specification.
     - pros
       - embed objects in any lexical env
@@ -23,10 +24,10 @@
     - cons
       - additional tokens/ast types
       - additional formatter/encoder methods
-  - should the reference impl (rust) enum =Sexp= (valid ast types) be
+  - [+] should the reference impl (rust) enum =Sexp= (valid ast types) be
     renamed? maybe to =Form=? something else?
 * Abstract
-This document defines the SEXP data format. It is intended for
+This document defines the SXP data format. It is intended for
 application and library developers who wish to use S-Expressions as a
 general purpose data format.
 
@@ -102,7 +103,7 @@ The honest and fair truth is that *languages don't need Lisp*.
 
 However, it may be the case that *languages need S-expressions* and by
 extension, S-expressions need some additional rules. We will call this
-extended definition *SEXP*.
+extended definition *SXP*.
 
 [fn:1] There are good reasons for needing Lisp, just not in this case.
 
@@ -151,13 +152,16 @@ The point I will argue from here is that neither XML nor JSON have
 found the optimal point at which the ability to describe data types
 and structures is maximized. In other words, XML and JSON are not
 powerful enough.
-* SEXP
+* SXP
+S-eXPressions[fn:2].
+
+[fn:2]  Pronounced 'es-ex-pee' not 'sex-pee' 
 ** Overview
-*SEXP* is an attempt at making S-Expressions into a robust /meta data
+*SXP* is an attempt at making S-Expressions into a robust /meta data
  format/. It consists of the modern rules of S-Expression described in
  the introduction (nil is defined, we can omit dots), a set of
  well-defined tokens and atoms, a list type, a formatter, and a
- framework for extending the /reader/ and /writer/ of any given SEXP
+ framework for extending the /reader/ and /writer/ of any given SXP
  implementation via macros.
 *** Prior Art
 The sections preceeding this one were written without doing any
@@ -178,7 +182,7 @@ For some additional simple implementations, check out [[https://rosettacode.org/
 Rosetta Code]].
 ** Tokens
 We explicitly define tokens for added flexibility. Their usage is
-demonstrated in the implementation section. SEXPs are intended to be
+demonstrated in the implementation section. SXPs are intended to be
 read and written from a stream of bytes, so it makes sense to have as
 low-level of a representation of individual bytes as possible.
 *** ListStart
@@ -201,7 +205,7 @@ A string which prints with quotes, ="foo"=
 *** Number
 A string which contains numeric characters (Potential Number)
 ** Atoms
-Atoms are the indivisible units of a SEXP -- they are used as the
+Atoms are the indivisible units of a SXP -- they are used as the
 internal representation of our data which is manipulated in the
 structures supported by a given implementation.
 *** Numbers
@@ -274,7 +278,7 @@ see also: [[http://clhs.lisp.se/Body/02_caa.htm][potential numbers]]
 #+end_example
 ** Lists
 ** Macros
-Macros are the mechanism by which a SEXP reader and writer are
+Macros are the mechanism by which a SXP reader and writer are
 extended. They are driven by individual function lookup tables -
 referred to as the ~readtable~ and ~writetable~ respectively. These
 tables are indexed separately but store the same core 'Macro' type.
@@ -290,7 +294,7 @@ on the remainder of the input or until control is returned to the
 Deserializer.  See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
 *** Writer Macros
 Writer Macros occur during /serialization/ before being passed to the
-output formatter/writer. They allow for transformations of SEXPs in
+output formatter/writer. They allow for transformations of SXPs in
 memory. Note that this does /not/ modify the printed (formatted) representation,
 only the internal representation.
 
@@ -305,7 +309,7 @@ The most direct analogy to these macros in CL are actually /compiler
 macros/, as we are effectively defining optimization passes which
 search for and replace specific patterns of code.
 ** Formatter
-The final component of SEXP is the formatter. This is the /first/
+The final component of SXP is the formatter. This is the /first/
 transformation made at read-time, and the /last/ at write-time.
 
 Unlike macros, formatters are interfaces which translate streams of
@@ -340,9 +344,9 @@ This section provides a test suite which can be used for verifying and
 benchmarking an implementation as shown in the reference
 implementation.
 - test data ::
-  - =./tests.sexp=
+  - =./tests.sxp=
 *** token tests
-SEXP implementations are required to convert data from arbitrary
+SXP implementations are required to convert data from arbitrary
 streams into Tokens.
 *** ast tests
 *** serialization tests

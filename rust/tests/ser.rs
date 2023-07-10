@@ -1,7 +1,7 @@
 /// tests/ser.rs --- SER
 use serde_derive::Serialize;
-use sexp::{to_string, to_vec, to_writer};
 use std::io::BufWriter;
+use sxp::{to_string, to_vec, to_writer};
 #[test]
 fn ser_struct() {
   #[derive(Serialize)]

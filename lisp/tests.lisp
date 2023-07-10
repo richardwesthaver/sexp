@@ -1,12 +1,12 @@
 ;;; tests.lisp --- SEXP tests
-(defpackage :sexp-tests
-  (:use :cl :sexp :fiveam)
+(defpackage :sxp-tests
+  (:use :cl :sxp :fiveam)
   (:shadowing-import-from #:fiveam #:test)
   (:export #:run-tests))
 
-(in-package :sexp-tests)
+(in-package :sxp-tests)
 
-(def-suite :sexp)
+(def-suite :sxp)
 
 (defun run-tests ()
-  (run! :sexp))
+  (run! :sxp))

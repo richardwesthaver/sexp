@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "sxp"
+version = "0.1.0"
+description = "S-eXPressions"
+authors = ["ellis <ellis@rwest.io>"]
+license = "WTF"
+readme = "readme.org"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,4 +1,4 @@
-//! fmt.rs --- SEXP Formatters
+//! fmt.rs --- SXP Formatters
 use crate::tok::CharEscape;
 use std::io::{self, Write}; //TODO : Read
 

@@ -1,4 +1,4 @@
-//! de.rs --- SEXP deserializer
+//! de.rs --- SXP deserializer
 use std::{io::Read, marker::PhantomData};
 use serde::de::{self, Deserialize};
 use crate::{Error, Result, fmt::Formatter};

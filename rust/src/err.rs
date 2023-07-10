@@ -1,4 +1,4 @@
-//! err.rs --- SEXP Errors
+//! err.rs --- SXP Errors
 use serde::de::Error as DeError;
 use serde::ser::Error as SerError;
 use std::fmt::Display;

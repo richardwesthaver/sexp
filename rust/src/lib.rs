@@ -1,13 +1,13 @@
-//! lib.rs --- S-Expression data format
+//! lib.rs --- S-eXPressions.
 
 //! S-Expressions (S-Expr, sexp) are a flexible notation for tree-like
-//! data.
+//! data. SXP is an extension.
 
 //! * example
 
 //! ```rust
 //! use serde_derive::{Deserialize, Serialize};
-//! use sexp::to_string; // from_str
+//! use sxp::to_string; // from_str
 //!
 //! #[derive(Debug, Serialize, Deserialize, PartialEq)]
 //! struct Item {
@@ -56,7 +56,7 @@ pub mod tok;
 
 // pub use crate::de::{from_reader, from_str, Deserializer};
 #[doc(inline)]
-pub use ast::Sexp;
+pub use ast::Form;
 #[doc(inline)]
 pub use fmt::{CanonicalFormatter, Formatter};
 #[doc(inline)]
@@ -67,33 +67,33 @@ pub use ser::{to_string, to_vec, to_writer, Serializer};
 pub use tok::Token;
 
 #[macro_export(local_inner_macros)]
-macro_rules! sexp {
-  ($($sexp:tt)+) => {
-    _sexp!($($sexp)+)
+macro_rules! sxp {
+  ($($sxp:tt)+) => {
+    _sxp!($($sxp)+)
   };
 }
 
 // may not be necessary
 #[macro_export(local_inner_macros)]
 #[doc(hidden)]
-macro_rules! _sexp {
+macro_rules! _sxp {
   (@array [$($elems:expr),*]) => {
-    sexp_vec![$($elems),*]
+    sxp_vec![$($elems),*]
   };
   // Next element is `nil`.
   (@array [$($elems:expr,)*] nil $($rest:tt)*) => {
-    _sexp!(@array [$($elems,)* _sexp!(nil)] $($rest)*)
+    _sxp!(@array [$($elems,)* _sxp!(nil)] $($rest)*)
   };
   // Unexpected token after most recent element.
   (@array [$($elems:expr),*] $unexpected:tt $($rest:tt)*) => {
-    sexp_unexpected!($unexpected)
+    sxp_unexpected!($unexpected)
   };
 
   //////////////////////////////////////////////////////////////////////////
   // TT muncher for parsing the inside of a object (:foo "bar"). Each entry is
   // inserted into the given map variable.
   //
-  // Must be invoked as: _sexp!(@object $map () ($($tt)*) ($($tt)*))
+  // Must be invoked as: _sxp!(@object $map () ($($tt)*) ($($tt)*))
   //
   // We require two copies of the input tokens so that we can match on one
   // copy and trigger errors on the other copy.
@@ -105,12 +105,12 @@ macro_rules! _sexp {
   // Insert the current entry.
   (@object $object:ident ( [$($key:tt)+] ($value:expr) ) $($rest:tt)*) => {
     let _ = $object.insert(($($key)+).into(), $value);
-    _sexp!(@object $object () ($($rest)*) ($($rest)*));
+    _sxp!(@object $object () ($($rest)*) ($($rest)*));
     };
 
     // Current entry followed by unexpected token.
     (@object $object:ident [$($key:tt)+] ($value:expr) $unexpected:tt $($rest:tt)*) => {
-        sexp_unexpected!($unexpected);
+        sxp_unexpected!($unexpected);
     };
 
     // Insert the last entry
