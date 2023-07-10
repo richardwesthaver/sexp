@@ -6,7 +6,7 @@
 //! * example
 
 //! ```rust
-//! use serde::{Deserialize, Serialize};
+//! use serde_derive::{Deserialize, Serialize};
 //! use sexp::{from_str, to_string};
 //!
 //! #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -50,4 +50,7 @@ pub mod ser;
 pub mod tok;
 
 // pub use crate::de::{from_reader, from_str, Deserializer};
-// pub use crate::ser::{to_string, to_writer, Serializer};
+pub use ast::Sexp;
+pub use fmt::{CanonicalFormatter, Formatter};
+pub use ser::{to_string, to_vec, to_writer, Serializer};
+pub use tok::Token;

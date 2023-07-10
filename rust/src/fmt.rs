@@ -233,6 +233,14 @@ pub trait Formatter {
     };
     writer.write_all(s)
   }
+  #[inline]
+  fn write_symbol<W: ?Sized + Write>(
+    &mut self,
+    writer: &mut W,
+    sym: &str,
+  ) -> io::Result<()> {
+    writer.write_all(sym.as_bytes())
+  }
   /// Called before every list.  Writes a `(` to the specified
   /// writer.
   #[inline]
@@ -248,15 +256,35 @@ pub trait Formatter {
   fn end_list<W: ?Sized + Write>(&mut self, writer: &mut W) -> io::Result<()> {
     writer.write_all(b")")
   }
+  /// Called before every list element.  Writes a ` ` if needed to the
+  /// specified writer.
+  #[inline]
+  fn begin_list_element<W: ?Sized + Write>(
+    &mut self,
+    writer: &mut W,
+    car: bool,
+  ) -> io::Result<()> {
+    if car {
+      Ok(())
+    } else {
+      writer.write_all(b" ")
+    }
+  }
+  /// Called after every list element.
+  #[inline]
+  fn end_list_element<W: ?Sized + Write>(
+    &mut self,
+    _writer: &mut W,
+  ) -> io::Result<()> {
+    Ok(())
+  }
   /// Called before every slot identifier.  Writes a `:` to the
   /// specified writer.
   #[inline]
-  fn begin_slot_key<W: ?Sized + Write>(
-    &mut self,
-    writer: &mut W,
-  ) -> io::Result<()> {
+  fn begin_key<W: ?Sized + Write>(&mut self, writer: &mut W) -> io::Result<()> {
     writer.write_all(b":")
   }
+
   /// Writes a raw JSON fragment that doesn't need any escaping to the
   /// specified writer.
   #[inline]

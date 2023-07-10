@@ -337,8 +337,10 @@ User-defined formatter.
 This section provides a test suite which can be used for verifying and
 benchmarking an implementation as shown in the reference
 implementation.
+
 *** lexer
-SEXP implementations are required to 
+SEXP implementations are required to convert data from arbitrary
+streams into Tokens in a process called lexing.
 *** parser
 *** serde
 * Reference Implementation
