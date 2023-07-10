@@ -42,5 +42,19 @@
   "Write S-Expressions directly to STREAM (default =
   `standard-output') with optional COMMENT.")
 
+(with-eval-after-load "ert"
+  (ert-deftest sexp:read()
+    (should t))
+  (ert-deftest sexp:write()
+    (should t))
+  (ert-deftest sexp:from()
+    (should t))
+  (ert-deftest sexp:to()
+    (should t))
+  (ert-deftest sexp:fmt()
+    (should t))
+  (ert-deftest sexp:mode()
+    (should t)))
+
 (provide 'sexp)
 ;;; sexp.el ends here
