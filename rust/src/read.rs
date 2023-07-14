@@ -14,10 +14,9 @@ use crate::iter::LineColIterator;
 /// Trait used by the deserializer for iterating over input. This is manually
 /// "specialized" for iterating over &[u8]. Once feature(specialization) is
 /// stable we can use actual specialization.
-///
-/// This trait is sealed and cannot be implemented for types outside of
-/// `sxp`.
-pub trait Read<'de>: private::Sealed {
+//  TODO 2023-07-14: should we use specialization anyways? we are on
+//  nightly 99% of the time for better or worse
+pub trait Read<'de> {
   #[doc(hidden)]
   fn next(&mut self) -> Result<Option<u8>>;
   #[doc(hidden)]
@@ -152,13 +151,6 @@ pub struct StrRead<'a> {
   delegate: SliceRead<'a>,
 }
 
-// Prevent users from implementing the Read trait.
-mod private {
-  pub trait Sealed {}
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 #[cfg(feature = "std")]
 impl<R> IoRead<R>
 where
@@ -172,9 +164,6 @@ where
     }
   }
 }
-
-#[cfg(feature = "std")]
-impl<R> private::Sealed for IoRead<R> where R: io::Read {}
 
 #[cfg(feature = "std")]
 impl<R> IoRead<R>
@@ -412,8 +401,6 @@ impl<'a> SliceRead<'a> {
   }
 }
 
-impl<'a> private::Sealed for SliceRead<'a> {}
-
 impl<'a> Read<'a> for SliceRead<'a> {
   #[inline]
   fn next(&mut self) -> Result<Option<u8>> {
@@ -538,8 +525,6 @@ impl<'a> StrRead<'a> {
   }
 }
 
-impl<'a> private::Sealed for StrRead<'a> {}
-
 impl<'a> Read<'a> for StrRead<'a> {
   #[inline]
   fn next(&mut self) -> Result<Option<u8>> {
@@ -606,8 +591,6 @@ impl<'a> Read<'a> for StrRead<'a> {
 
 //////////////////////////////////////////////////////////////////////////////
 
-impl<'a, 'de, R> private::Sealed for &'a mut R where R: Read<'de> {}
-
 impl<'a, 'de, R> Read<'de> for &'a mut R
 where
   R: Read<'de>,
@@ -665,10 +648,8 @@ where
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
 /// Marker for whether StreamDeserializer can implement FusedIterator.
-pub trait Fused: private::Sealed {}
+pub trait Fused {}
 impl<'a> Fused for SliceRead<'a> {}
 impl<'a> Fused for StrRead<'a> {}
 
