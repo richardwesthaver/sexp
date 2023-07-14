@@ -181,23 +181,22 @@ actually and I'm excited to test it further.
 For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
 Rosetta Code]].
 ** Tokens
-We explicitly define tokens for added flexibility. Their usage is
-demonstrated in the implementation section. SXPs are intended to be
-read and written from a stream of bytes, so it makes sense to have as
-low-level of a representation of individual bytes as possible.
+We explicitly define tokens as demonstrated in the implementation
+section. SXPs are intended to be read and written from a stream of
+bytes, so it makes sense to have as low-level of a representation of
+individual characters in an S-expression as possible.
 *** ListStart
 The list starting character is typically =(=.
 *** ListEnd
 The List ending character is typically =)=.
-*** Dot
-A single dot character, =.=. This is a special character used to
-separate the car and cdr of a cons cell.
-*** COMMENT SlotSymbol
-A character which designates the start of a 'slot' symbol, typically
-=:=.
+*** COMMENT KeySymbol
+A character which designates the start of a slot 'key' symbol,
+typically =:=.
 *** COMMENT ReaderSymbol
 A character which designates that the next character is a 'read'
 symbol, typically =#=.
+*** COMMENT BackQuote
+*** COMMENT Quote
 *** Symbol
 Just a plain unquoted string, such as =foo=. 
 *** String

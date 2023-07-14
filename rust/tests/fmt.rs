@@ -1,12 +1,12 @@
 use std::io::BufWriter;
-use sxp::{CanonicalFormatter, Formatter};
+use sxp::{DefaultFormatter, Formatter};
 pub struct TestFormatter;
 impl Formatter for TestFormatter {}
 
 #[test]
 fn canonical_fmt() {
   let mut buf = vec![];
-  let mut f = CanonicalFormatter;
+  let mut f = DefaultFormatter;
   f.write_nil(&mut BufWriter::new(&mut buf)).unwrap();
   assert_eq!("nil", String::from_utf8(buf.clone()).unwrap());
   buf.clear();

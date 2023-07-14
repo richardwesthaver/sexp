@@ -9,10 +9,6 @@ fn list_end_token() {
   assert_eq!(Token::from_str(")").unwrap(), Token::ListEnd)
 }
 #[test]
-fn dot_token() {
-  assert_eq!(Token::from_str(".").unwrap(), Token::Dot)
-}
-#[test]
 fn sym_token() {
   assert_eq!(
     Token::from_str("foobar").unwrap(),

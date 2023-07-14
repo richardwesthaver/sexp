@@ -297,8 +297,8 @@ pub trait Formatter {
   }
 }
 
-pub struct CanonicalFormatter;
-impl Formatter for CanonicalFormatter {}
+pub struct DefaultFormatter;
+impl Formatter for DefaultFormatter {}
 
 pub struct BinaryFormatter;
 impl Formatter for BinaryFormatter {}

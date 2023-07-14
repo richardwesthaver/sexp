@@ -29,6 +29,7 @@
 //!     assert_eq!(src, reserialized_item);
 //! }
 //! ```
+#![feature(type_alias_impl_trait)]
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
@@ -47,18 +48,19 @@ macro_rules! tri {
   };
 }
 
-// pub mod de;
+pub mod iter;
+pub mod read;
+pub mod de;
 pub mod ast;
 pub mod fmt;
 pub mod macs;
 pub mod ser;
 pub mod tok;
-
 // pub use crate::de::{from_reader, from_str, Deserializer};
 #[doc(inline)]
 pub use ast::Form;
 #[doc(inline)]
-pub use fmt::{CanonicalFormatter, Formatter};
+pub use fmt::{DefaultFormatter, Formatter};
 #[doc(inline)]
 pub use macs::{Macro, MacroObject, ReadTable, WriteTable};
 #[doc(inline)]

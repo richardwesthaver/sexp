@@ -1,8 +1,8 @@
 //! tok.rs --- SXP Tokens
-
-use crate::{fmt::Formatter, Error};
 /// all possible Tokens. Note that we do not explicitly declare a
-/// 'nil' variant. The modern rules of S-expressions are implicit.
+/// 'nil' variant. The modern rules of S-expressions are implicit in
+/// the SXP specification.
+use crate::{fmt::Formatter, Error};
 use serde::de::{self, Unexpected, Visitor};
 use serde::{
   forward_to_deserialize_any, Deserialize, Deserializer, Serialize, Serializer,
@@ -11,7 +11,6 @@ use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::io::{self, Write};
 use std::str::FromStr;
-pub type Form = Vec<Token>;
 
 /// Token types collected from the output of a type which implements
 /// Read+Format.
@@ -19,7 +18,6 @@ pub type Form = Vec<Token>;
 pub enum Token {
   ListStart,
   ListEnd,
-  Dot,
   Sym(String),
   Str(String),
   Num(String),
@@ -30,7 +28,6 @@ impl Display for Token {
     match self {
       Token::ListStart => f.write_str("( "),
       Token::ListEnd => f.write_str(")\n"),
-      Token::Dot => f.write_str("."),
       Token::Sym(s) => f.write_str(&format!("{} ", &s)),
       Token::Str(s) => f.write_str(&format!("\"{}\" ", &s)),
       Token::Num(n) => Display::fmt(&n, f),
@@ -44,7 +41,6 @@ impl FromStr for Token {
     match s {
       "(" => Ok(Token::ListStart),
       ")" => Ok(Token::ListEnd),
-      "." => Ok(Token::Dot),
       s => {
         if s.starts_with("\"") {
           Ok(Token::Str(s.trim_matches('"').to_owned()))
