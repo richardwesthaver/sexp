@@ -1964,12 +1964,11 @@ where
 {
 }
 
-fn from_trait<'de, R, T>(read: R) -> Result<T>
-where
-  R: Read<'de>,
-  T: de::Deserialize<'de>,
-{
-  let mut de = Deserializer::new(read, DefaultFormatter);
+pub fn from_traits<'de, R: Read<'de>, F: Formatter, T: de::Deserialize<'de>>(
+  r: R,
+  f: F,
+) -> Result<T> {
+  let mut de = Deserializer::new(r, f);
   let value = tri!(de::Deserialize::deserialize(&mut de));
 
   // Make sure the whole stream has been consumed.
@@ -1980,13 +1979,13 @@ where
 pub fn from_reader<'de, R: crate::io::Read, T: de::DeserializeOwned>(
   rdr: R,
 ) -> Result<T> {
-  from_trait(read::IoRead::new(rdr))
+  from_traits(read::IoRead::new(rdr), DefaultFormatter)
 }
 
 pub fn from_str<'de, T: de::Deserialize<'de>>(v: &'de str) -> Result<T> {
-  from_trait(read::StrRead::new(v))
+  from_traits(read::StrRead::new(v), DefaultFormatter)
 }
 
 pub fn from_slice<'de, T: Deserialize<'de>>(v: &'de [u8]) -> Result<T> {
-  from_trait(read::SliceRead::new(v))
+  from_traits(read::SliceRead::new(v), DefaultFormatter)
 }
