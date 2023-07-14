@@ -30,6 +30,7 @@
 //! }
 //! ```
 #![feature(type_alias_impl_trait)]
+#![allow(non_upper_case_globals)]
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
@@ -56,7 +57,7 @@ pub mod macs;
 pub mod read;
 pub mod ser;
 pub mod tok;
-// pub use crate::de::{from_reader, from_str, Deserializer};
+pub use crate::de::{from_reader, from_slice, from_str, Deserializer};
 #[doc(inline)]
 pub use ast::Form;
 #[doc(inline)]

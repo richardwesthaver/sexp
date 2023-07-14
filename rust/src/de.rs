@@ -9,8 +9,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
-use core::result;
-use core::str::FromStr;
 use serde::de::{self, Deserialize, Expected, Unexpected};
 use serde::forward_to_deserialize_any;
 
@@ -210,11 +208,12 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
     let err = match self.peek_or_null().unwrap_or(b'\x00') {
       b'n' => {
         self.eat_char();
-        if let Err(err) = self.parse_ident(b"ull") {
+        if let Err(err) = self.parse_ident(b"il") {
           return err;
         }
         de::Error::invalid_type(Unexpected::Unit, exp)
       }
+      //  TODO 2023-07-14 : use read-symbol
       b't' => {
         self.eat_char();
         if let Err(err) = self.parse_ident(b"rue") {
@@ -224,7 +223,7 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
       }
       b'f' => {
         self.eat_char();
-        if let Err(err) = self.parse_ident(b"alse") {
+        if let Err(err) = self.parse_ident(b"") {
           return err;
         }
         de::Error::invalid_type(Unexpected::Bool(false), exp)
@@ -248,8 +247,7 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
           Err(err) => return err,
         }
       }
-      b'[' => de::Error::invalid_type(Unexpected::Seq, exp),
-      b'{' => de::Error::invalid_type(Unexpected::Map, exp),
+      b'(' => de::Error::invalid_type(Unexpected::Seq, exp),
       _ => self.peek_error(ErrorCode::ExpectedSomeValue),
     };
 
@@ -715,24 +713,23 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
 
   fn end_seq(&mut self) -> Result<()> {
     match tri!(self.parse_whitespace()) {
-      Some(b']') => {
+      Some(b')') => {
         self.eat_char();
         Ok(())
       }
-      Some(b',') => {
+      Some(_) => {
         self.eat_char();
         match self.parse_whitespace() {
           _ => Err(self.peek_error(ErrorCode::TrailingCharacters)),
         }
       }
-      Some(_) => Err(self.peek_error(ErrorCode::TrailingCharacters)),
       None => Err(self.peek_error(ErrorCode::EofWhileParsingList)),
     }
   }
 
   fn end_map(&mut self) -> Result<()> {
     match tri!(self.parse_whitespace()) {
-      Some(b'}') => {
+      Some(b')') => {
         self.eat_char();
         Ok(())
       }
@@ -756,10 +753,11 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
       let frame = match peek {
         b'n' => {
           self.eat_char();
-          tri!(self.parse_ident(b"ull"));
+          tri!(self.parse_ident(b"il"));
           None
         }
         b't' => {
+          // TODO
           self.eat_char();
           tri!(self.parse_ident(b"rue"));
           None
@@ -783,7 +781,7 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
           tri!(self.read.ignore_str());
           None
         }
-        frame @ (b'[' | b'{') => {
+        frame @ b'(' => {
           self.scratch.extend(enclosing.take());
           self.eat_char();
           Some(frame)
@@ -791,12 +789,12 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
         _ => return Err(self.peek_error(ErrorCode::ExpectedSomeValue)),
       };
 
-      let (mut accept_comma, mut frame) = match frame {
-        Some(frame) => (false, frame),
+      let mut frame = match frame {
+        Some(frame) => frame,
         None => match enclosing.take() {
-          Some(frame) => (true, frame),
+          Some(frame) => frame,
           None => match self.scratch.pop() {
-            Some(frame) => (true, frame),
+            Some(frame) => frame,
             None => return Ok(()),
           },
         },
@@ -804,26 +802,13 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
 
       loop {
         match tri!(self.parse_whitespace()) {
-          Some(b',') if accept_comma => {
-            self.eat_char();
-            break;
-          }
-          Some(b']') if frame == b'[' => {}
-          Some(b'}') if frame == b'{' => {}
+          Some(b')') if frame == b'(' => {}
           Some(_) => {
-            if accept_comma {
-              return Err(self.peek_error(match frame {
-                b'(' => ErrorCode::ExpectedListEnd,
-                _ => unreachable!(),
-              }));
-            } else {
-              break;
-            }
+            break;
           }
           None => {
             return Err(self.peek_error(match frame {
-              b'[' => ErrorCode::EofWhileParsingList,
-              b'{' => ErrorCode::EofWhileParsingObject,
+              b'(' => ErrorCode::EofWhileParsingList,
               _ => unreachable!(),
             }));
           }
@@ -834,10 +819,9 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
           Some(frame) => frame,
           None => return Ok(()),
         };
-        accept_comma = true;
       }
 
-      if frame == b'{' {
+      if frame == b'(' {
         match tri!(self.parse_whitespace()) {
           Some(b'"') => self.eat_char(),
           Some(_) => return Err(self.peek_error(ErrorCode::KeyMustBeASymbol)),
@@ -1059,7 +1043,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
           (Err(err), _) | (_, Err(err)) => Err(err),
         }
       }
-      b'{' => {
+      b'(' => {
         check_recursion! {
             self.eat_char();
             let ret = visitor.visit_map(MapAccess::new(self));
@@ -1202,46 +1186,6 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
   ///
   /// Escape sequences are processed as usual, and for `\uXXXX` escapes it is
   /// still checked if the hex number represents a valid Unicode code point.
-  ///
-  /// # Examples
-  ///
-  /// You can use this to parse JSON strings containing invalid UTF-8 bytes,
-  /// or unpaired surrogates.
-  ///
-  /// ```
-  /// use serde_bytes::ByteBuf;
-  ///
-  /// fn look_at_bytes() -> Result<(), serde_json::Error> {
-  ///     let json_data = b"\"some bytes: \xe5\x00\xe5\"";
-  ///     let bytes: ByteBuf = serde_json::from_slice(json_data)?;
-  ///
-  ///     assert_eq!(b'\xe5', bytes[12]);
-  ///     assert_eq!(b'\0', bytes[13]);
-  ///     assert_eq!(b'\xe5', bytes[14]);
-  ///
-  ///     Ok(())
-  /// }
-  /// #
-  /// # look_at_bytes().unwrap();
-  /// ```
-  ///
-  /// Backslash escape sequences like `\n` are still interpreted and required
-  /// to be valid. `\u` escape sequences are required to represent a valid
-  /// Unicode code point or lone surrogate.
-  ///
-  /// ```
-  /// use serde_bytes::ByteBuf;
-  ///
-  /// fn look_at_bytes() -> Result<(), serde_json::Error> {
-  ///     let json_data = b"\"lone surrogate: \\uD801\"";
-  ///     let bytes: ByteBuf = serde_json::from_slice(json_data)?;
-  ///     let expected = b"lone surrogate: \xED\xA0\x81";
-  ///     assert_eq!(expected, bytes.as_slice());
-  ///     Ok(())
-  /// }
-  /// #
-  /// # look_at_bytes();
-  /// ```
   fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value>
   where
     V: de::Visitor<'de>,
@@ -1410,7 +1354,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     };
 
     let value = match peek {
-      b'{' => {
+      b'(' => {
         check_recursion! {
             self.eat_char();
             let ret = visitor.visit_map(MapAccess::new(self));
@@ -1447,24 +1391,13 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     };
 
     let value = match peek {
-      b'[' => {
+      b'(' => {
         check_recursion! {
             self.eat_char();
             let ret = visitor.visit_seq(SeqAccess::new(self));
         }
 
         match (ret, self.end_seq()) {
-          (Ok(ret), Ok(())) => Ok(ret),
-          (Err(err), _) | (_, Err(err)) => Err(err),
-        }
-      }
-      b'{' => {
-        check_recursion! {
-            self.eat_char();
-            let ret = visitor.visit_map(MapAccess::new(self));
-        }
-
-        match (ret, self.end_map()) {
           (Ok(ret), Ok(())) => Ok(ret),
           (Err(err), _) | (_, Err(err)) => Err(err),
         }
@@ -1491,7 +1424,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     V: de::Visitor<'de>,
   {
     match tri!(self.parse_whitespace()) {
-      Some(b'{') => {
+      Some(b'(') => {
         check_recursion! {
             self.eat_char();
             let value = tri!(visitor.visit_enum(VariantAccess::new(self)));
@@ -1911,20 +1844,6 @@ where
 /// The data can consist of any JSON value. Values need to be a self-delineating
 /// value e.g. arrays, objects, or strings, or be followed by whitespace or a
 /// self-delineating value.
-///
-/// ```
-/// use serde_json::{Deserializer, Value};
-///
-/// fn main() {
-///     let data = "{\"k\": 3}1\"cool\"\"stuff\" 3{}  [0, 1, 2]";
-///
-///     let stream = Deserializer::from_str(data).into_iter::<Value>();
-///
-///     for value in stream {
-///         println!("{}", value.unwrap());
-///     }
-/// }
-/// ```
 pub struct StreamDeserializer<'de, R, F: Formatter, T> {
   de: Deserializer<R, F>,
   offset: usize,
@@ -1959,36 +1878,6 @@ where
   }
 
   /// Returns the number of bytes so far deserialized into a successful `T`.
-  ///
-  /// If a stream deserializer returns an EOF error, new data can be joined to
-  /// `old_data[stream.byte_offset()..]` to try again.
-  ///
-  /// ```
-  /// let data = b"[0] [1] [";
-  ///
-  /// let de = serde_json::Deserializer::from_slice(data);
-  /// let mut stream = de.into_iter::<Vec<i32>>();
-  /// assert_eq!(0, stream.byte_offset());
-  ///
-  /// println!("{:?}", stream.next()); // [0]
-  /// assert_eq!(3, stream.byte_offset());
-  ///
-  /// println!("{:?}", stream.next()); // [1]
-  /// assert_eq!(7, stream.byte_offset());
-  ///
-  /// println!("{:?}", stream.next()); // error
-  /// assert_eq!(8, stream.byte_offset());
-  ///
-  /// // If err.is_eof(), can join the remaining data to new data and continue.
-  /// let remaining = &data[stream.byte_offset()..];
-  /// ```
-  ///
-  /// *Note:* In the future this method may be changed to return the number of
-  /// bytes so far deserialized into a successful T *or* syntactically valid
-  /// JSON skipped over due to a type error. See [serde-rs/json#70] for an
-  /// example illustrating this.
-  ///
-  /// [serde-rs/json#70]: https://github.com/serde-rs/json/issues/70
   pub fn byte_offset(&self) -> usize {
     self.offset
   }
@@ -1996,7 +1885,7 @@ where
   fn peek_end_of_value(&mut self) -> Result<()> {
     match tri!(self.de.peek()) {
       Some(
-        b' ' | b'\n' | b'\t' | b'\r' | b'"' | b'[' | b']' | b'{' | b'}' | b','
+        b' ' | b'\n' | b'\t' | b'\r' | b'"' | b'(' | b')' | b',' // TODO
         | b':',
       )
       | None => Ok(()),
@@ -2038,7 +1927,7 @@ where
         // (like numbers, null, true etc.) we have to look for whitespace or
         // the beginning of a self-delineated value.
         let self_delineated_value = match b {
-          b'[' | b'"' | b'{' => true,
+          b'"' | b'(' => true,
           _ => false,
         };
         self.offset = self.de.read.byte_offset();
@@ -2075,31 +1964,29 @@ where
 {
 }
 
-// impl<'de, 'a, R: Read, F: Formatter> de::Deserializer<'de> for &'a mut
-// Deserializer<'de, R, F> {   type Error = Error;
-// }
+fn from_trait<'de, R, T>(read: R) -> Result<T>
+where
+  R: Read<'de>,
+  T: de::Deserialize<'de>,
+{
+  let mut de = Deserializer::new(read, DefaultFormatter);
+  let value = tri!(de::Deserialize::deserialize(&mut de));
 
-// fn from_trait<'de, R, T>(read: R) -> Result<T>
-// where
-//     R: Read,
-//     T: de::Deserialize<'de>,
-// {
-//     let mut de = Deserializer::new(read, DefaultFormatter);
-//     let value = tri!(de::Deserialize::deserialize(&mut de));
+  // Make sure the whole stream has been consumed.
+  tri!(de.end());
+  Ok(value)
+}
 
-//     // Make sure the whole stream has been consumed.
-//     tri!(de.end());
-//     Ok(value)
-// }
+pub fn from_reader<'de, R: crate::io::Read, T: de::DeserializeOwned>(
+  rdr: R,
+) -> Result<T> {
+  from_trait(read::IoRead::new(rdr))
+}
 
-// pub fn from_read<'de, R: Read, T: de::Deserialize<'de>>(read: R) -> Result<T>
-// {   T::deserialize(&mut Deserializer::new(read, DefaultFormatter))
-// }
+pub fn from_str<'de, T: de::Deserialize<'de>>(v: &'de str) -> Result<T> {
+  from_trait(read::StrRead::new(v))
+}
 
-// pub fn from_str<'de, T: ?Sized + de::Deserialize<'de>>(s: &str) -> Result<T>
-// {   from_read(s.as_bytes())
-// }
-
-// pub fn from_slice<'de, T: Deserialize<'de>>(value: &[u8]) -> Result<T> {
-//   from_trait()
-// }
+pub fn from_slice<'de, T: Deserialize<'de>>(v: &'de [u8]) -> Result<T> {
+  from_trait(read::SliceRead::new(v))
+}

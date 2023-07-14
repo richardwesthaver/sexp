@@ -1,23 +1,24 @@
 //! tests/de.rs --- DE
 //  TODO 2023-07-09
-// use serde_derive::Deserialize;
-// use sxp::from_str;
+use serde_derive::Deserialize;
+use sxp::{from_reader, from_slice, from_str};
 
-// #[test]
-// fn de_struct() {
-//   #[derive(Deserialize, PartialEq, Debug)]
-//   struct Test {
-//     int: u32,
-//     seq: Vec<String>,
-//   }
-//   // external tagging is serde default behavior
-//   let j = r#"(test :int 1 :seq ("a" "b"))"#;
-//   let expected = Test {
-//     int: 1,
-//     seq: vec!["a".to_owned(), "b".to_owned()],
-//   };
-//   assert_eq!(expected, from_str(j).unwrap());
-// }
+#[test]
+fn de_struct() {
+  #[derive(Deserialize, PartialEq, Debug)]
+  struct Test {
+    int: u32,
+    seq: Vec<String>,
+  }
+  // external tagging is serde default behavior
+  // let j = r#"(:int 1 :seq ("a" "b"))"#;
+  let j = r#"(1 ("a" "b"))"#;
+  let expected = Test {
+    int: 1,
+    seq: vec!["a".to_owned(), "b".to_owned()],
+  };
+  assert_eq!(expected, from_str(j).unwrap());
+}
 
 // #[test]
 // fn de_enum() {
