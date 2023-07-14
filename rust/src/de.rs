@@ -1032,24 +1032,13 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
           Reference::Copied(s) => visitor.visit_str(s),
         }
       }
-      b'[' => {
+      b'(' => {
         check_recursion! {
             self.eat_char();
             let ret = visitor.visit_seq(SeqAccess::new(self));
         }
 
         match (ret, self.end_seq()) {
-          (Ok(ret), Ok(())) => Ok(ret),
-          (Err(err), _) | (_, Err(err)) => Err(err),
-        }
-      }
-      b'(' => {
-        check_recursion! {
-            self.eat_char();
-            let ret = visitor.visit_map(MapAccess::new(self));
-        }
-
-        match (ret, self.end_map()) {
           (Ok(ret), Ok(())) => Ok(ret),
           (Err(err), _) | (_, Err(err)) => Err(err),
         }
@@ -1206,7 +1195,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
           Reference::Copied(b) => visitor.visit_bytes(b),
         }
       }
-      b'[' => self.deserialize_seq(visitor),
+      b'(' => self.deserialize_seq(visitor),
       _ => Err(self.peek_invalid_type(&visitor)),
     };
 
@@ -1254,7 +1243,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     let value = match peek {
       b'n' => {
         self.eat_char();
-        tri!(self.parse_ident(b"ull"));
+        tri!(self.parse_ident(b"il"));
         visitor.visit_unit()
       }
       _ => Err(self.peek_invalid_type(&visitor)),
@@ -1303,7 +1292,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     };
 
     let value = match peek {
-      b'[' => {
+      b'(' => {
         check_recursion! {
             self.eat_char();
             let ret = visitor.visit_seq(SeqAccess::new(self));
@@ -1431,7 +1420,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
         }
 
         match tri!(self.parse_whitespace()) {
-          Some(b'}') => {
+          Some(b')') => {
             self.eat_char();
             Ok(value)
           }
@@ -1440,7 +1429,7 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
         }
       }
       Some(b'"') => visitor.visit_enum(UnitVariantAccess::new(self)),
-      Some(_) => Err(self.peek_error(ErrorCode::ExpectedSomeValue)),
+      Some(_) => visitor.visit_enum(UnitVariantAccess::new(self)),
       None => Err(self.peek_error(ErrorCode::EofWhileParsingValue)),
     }
   }
@@ -1482,20 +1471,14 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::SeqAccess<'de>
     T: de::DeserializeSeed<'de>,
   {
     let peek = match tri!(self.de.parse_whitespace()) {
-      Some(b']') => {
+      Some(b')') => {
         return Ok(None);
-      }
-      Some(b',') if !self.first => {
-        self.de.eat_char();
-        tri!(self.de.parse_whitespace())
       }
       Some(b) => {
         if self.first {
           self.first = false;
-          Some(b)
-        } else {
-          return Err(self.de.peek_error(ErrorCode::ExpectedListEnd));
         }
+        Some(b)
       }
       None => {
         return Err(self.de.peek_error(ErrorCode::EofWhileParsingList));
@@ -1530,20 +1513,14 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::MapAccess<'de>
     K: de::DeserializeSeed<'de>,
   {
     let peek = match tri!(self.de.parse_whitespace()) {
-      Some(b'}') => {
+      Some(b')') => {
         return Ok(None);
-      }
-      Some(b',') if !self.first => {
-        self.de.eat_char();
-        tri!(self.de.parse_whitespace())
       }
       Some(b) => {
         if self.first {
           self.first = false;
-          Some(b)
-        } else {
-          return Err(self.de.peek_error(ErrorCode::ExpectedListEnd));
         }
+        Some(b)
       }
       None => {
         return Err(self.de.peek_error(ErrorCode::EofWhileParsingObject));
@@ -1552,7 +1529,7 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::MapAccess<'de>
 
     match peek {
       Some(b'"') => seed.deserialize(MapKey { de: &mut *self.de }).map(Some),
-      Some(b'}') => Err(self.de.peek_error(ErrorCode::TrailingCharacters)),
+      Some(b')') => Err(self.de.peek_error(ErrorCode::TrailingCharacters)),
       Some(_) => Err(self.de.peek_error(ErrorCode::KeyMustBeASymbol)),
       None => Err(self.de.peek_error(ErrorCode::EofWhileParsingValue)),
     }

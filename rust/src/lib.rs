@@ -57,7 +57,9 @@ pub mod macs;
 pub mod read;
 pub mod ser;
 pub mod tok;
-pub use crate::de::{from_reader, from_slice, from_str, Deserializer};
+pub use crate::de::{
+  from_reader, from_slice, from_str, from_traits, Deserializer,
+};
 #[doc(inline)]
 pub use ast::Form;
 #[doc(inline)]
