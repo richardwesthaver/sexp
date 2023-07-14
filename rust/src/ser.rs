@@ -1,7 +1,7 @@
 //! ser.rs --- SXP Serializer
 use crate::fmt::{DefaultFormatter, Formatter};
 use crate::tok::{format_escaped_str, format_escaped_str_contents};
-use crate::{Error, Result, err::ErrorCode};
+use crate::{err::ErrorCode, Error, Result};
 use core::fmt::{self, Display};
 use core::num::FpCategory;
 use serde::ser::{self, Impossible, Serialize};
@@ -275,10 +275,7 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
     //     .formatter
     //     .end_object_value(&mut self.writer)
     //     .map_err(|e| e.into()));
-    self
-      .formatter
-      .end_list(&mut self.writer)
-      .map_err(Error::io)
+    self.formatter.end_list(&mut self.writer).map_err(Error::io)
   }
 
   #[inline]
@@ -302,10 +299,7 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
       .begin_list(&mut self.writer)
       .map_err(Error::io));
     if len == Some(0) {
-      tri!(self
-        .formatter
-        .end_list(&mut self.writer)
-        .map_err(Error::io));
+      tri!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
       Ok(Seq {
         ser: self,
         state: State::Nil,
@@ -367,10 +361,7 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
       .begin_list(&mut self.writer)
       .map_err(Error::io));
     if len == Some(0) {
-      tri!(self
-        .formatter
-        .end_list(&mut self.writer)
-        .map_err(Error::io));
+      tri!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
       Ok(Seq {
         ser: self,
         state: State::Nil,
@@ -463,7 +454,9 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
       match write!(adapter, "{}", value) {
         Ok(()) => debug_assert!(adapter.error.is_none()),
         Err(_) => {
-          return Err(Error::io(adapter.error.expect("there should be an error")));
+          return Err(Error::io(
+            adapter.error.expect("there should be an error"),
+          ));
         }
       }
     }
@@ -557,7 +550,11 @@ where
   fn end(self) -> Result<()> {
     match self.state {
       State::Nil => Ok(()),
-      _ => self.ser.formatter.end_list(&mut self.ser.writer).map_err(Error::io),
+      _ => self
+        .ser
+        .formatter
+        .end_list(&mut self.ser.writer)
+        .map_err(Error::io),
     }?;
     self
       .ser
@@ -614,10 +611,7 @@ where
       .begin_list_element(&mut ser.writer, self.state == State::Car)
       .map_err(Error::io));
     self.state = State::Cdr;
-    tri!(ser
-      .formatter
-      .begin_key(&mut ser.writer)
-      .map_err(Error::io));
+    tri!(ser.formatter.begin_key(&mut ser.writer).map_err(Error::io));
     key.serialize(SymbolSerializer(*ser))
   }
 
@@ -717,7 +711,7 @@ where
 }
 
 fn key_sym_error() -> Error {
-  Error::syntax(ErrorCode::KeyMustBeASymbol,0,0)
+  Error::syntax(ErrorCode::KeyMustBeASymbol, 0, 0)
 }
 
 struct SymbolSerializer<'a, W: 'a, F: 'a>(&'a mut Serializer<W, F>);

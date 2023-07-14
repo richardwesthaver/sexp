@@ -48,12 +48,12 @@ macro_rules! tri {
   };
 }
 
-pub mod iter;
-pub mod read;
-pub mod de;
 pub mod ast;
+pub mod de;
 pub mod fmt;
+pub mod iter;
 pub mod macs;
+pub mod read;
 pub mod ser;
 pub mod tok;
 // pub use crate::de::{from_reader, from_str, Deserializer};

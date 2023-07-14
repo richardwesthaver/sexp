@@ -1,13 +1,16 @@
 //! de.rs --- SXP deserializer
+use crate::read::{self, Fused, Reference};
+use crate::{
+  fmt::{DefaultFormatter, Formatter},
+  Error, Result,
+};
 use alloc::string::String;
 use alloc::vec::Vec;
-use serde::de::{self, Deserialize, Expected, Unexpected};
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
 use core::result;
 use core::str::FromStr;
-use crate::{Error, Result, fmt::{Formatter, DefaultFormatter}};
-use crate::read::{self, Fused, Reference};
+use serde::de::{self, Deserialize, Expected, Unexpected};
 
 pub use crate::read::{Read, SliceRead, StrRead};
 
@@ -21,7 +24,7 @@ pub struct Deserializer<R, F> {
   limit: Option<usize>,
 }
 
-impl<'de, R: Read<'de>, F: Formatter> Deserializer<R,F> {
+impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
   pub fn new(read: R, formatter: F) -> Self {
     Deserializer {
       read,
@@ -64,11 +67,10 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R,F> {
       }
     }
   }
-  
 }
 
-// impl<'de, 'a, R: Read, F: Formatter> de::Deserializer<'de> for &'a mut Deserializer<'de, R, F> {
-//   type Error = Error;
+// impl<'de, 'a, R: Read, F: Formatter> de::Deserializer<'de> for &'a mut
+// Deserializer<'de, R, F> {   type Error = Error;
 // }
 
 // fn from_trait<'de, R, T>(read: R) -> Result<T>
@@ -84,12 +86,12 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R,F> {
 //     Ok(value)
 // }
 
-// pub fn from_read<'de, R: Read, T: de::Deserialize<'de>>(read: R) -> Result<T> {
-//   T::deserialize(&mut Deserializer::new(read, DefaultFormatter))
+// pub fn from_read<'de, R: Read, T: de::Deserialize<'de>>(read: R) -> Result<T>
+// {   T::deserialize(&mut Deserializer::new(read, DefaultFormatter))
 // }
 
-// pub fn from_str<'de, T: ?Sized + de::Deserialize<'de>>(s: &str) -> Result<T> {
-//   from_read(s.as_bytes())
+// pub fn from_str<'de, T: ?Sized + de::Deserialize<'de>>(s: &str) -> Result<T>
+// {   from_read(s.as_bytes())
 // }
 
 // pub fn from_slice<'de, T: Deserialize<'de>>(value: &[u8]) -> Result<T> {
