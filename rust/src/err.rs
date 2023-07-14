@@ -64,6 +64,7 @@ impl Error {
       ErrorCode::ExpectedListEnd
       | ErrorCode::ExpectedSomeSymbol
       | ErrorCode::ExpectedSomeValue
+      | ErrorCode::ExpectedDoubleQuote
       | ErrorCode::InvalidEscape
       | ErrorCode::InvalidNumber
       | ErrorCode::NumberOutOfRange
@@ -189,6 +190,8 @@ pub(crate) enum ErrorCode {
   ExpectedSomeSymbol,
   /// Expected this character to start a SXP value.
   ExpectedSomeValue,
+  /// Expected this character to be '"'.
+  ExpectedDoubleQuote,
   /// Invalid hex escape code.
   InvalidEscape,
   /// Invalid number.
@@ -265,6 +268,7 @@ impl Display for ErrorCode {
       ErrorCode::ExpectedListEnd => f.write_str("expected `)`"),
       ErrorCode::ExpectedSomeSymbol => f.write_str("expected symbol"),
       ErrorCode::ExpectedSomeValue => f.write_str("expected value"),
+      ErrorCode::ExpectedDoubleQuote => f.write_str("expected `\"`"),
       ErrorCode::InvalidEscape => f.write_str("invalid escape"),
       ErrorCode::InvalidNumber => f.write_str("invalid number"),
       ErrorCode::NumberOutOfRange => f.write_str("number out of range"),
