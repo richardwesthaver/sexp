@@ -51,7 +51,7 @@ pub trait Read<'de> {
   #[doc(hidden)]
   fn byte_offset(&self) -> usize;
 
-  /// Assumes the previous byte was a quotation mark. Parses a JSON-escaped
+  /// Assumes the previous byte was a quotation mark. Parses an escaped
   /// string until the next quotation mark using the given scratch space if
   /// necessary. The scratch space is initially empty.
   #[doc(hidden)]
@@ -60,7 +60,7 @@ pub trait Read<'de> {
     scratch: &'s mut Vec<u8>,
   ) -> Result<Reference<'de, 's, str>>;
 
-  /// Assumes the previous byte was a quotation mark. Parses a JSON-escaped
+  /// Assumes the previous byte was a quotation mark. Parses an escaped
   /// string until the next quotation mark using the given scratch space if
   /// necessary. The scratch space is initially empty.
   ///
@@ -324,7 +324,7 @@ where
 //////////////////////////////////////////////////////////////////////////////
 
 impl<'a> SliceRead<'a> {
-  /// Create a JSON input source to read from a slice of bytes.
+  /// Create a SXP input source to read from a slice of bytes.
   pub fn new(slice: &'a [u8]) -> Self {
     SliceRead { slice, index: 0 }
   }
@@ -346,7 +346,7 @@ impl<'a> SliceRead<'a> {
   }
 
   /// The big optimization here over IoRead is that if the string contains no
-  /// backslash escape sequences, the returned &str is a slice of the raw JSON
+  /// backslash escape sequences, the returned &str is a slice of the raw SXP
   /// data so we avoid copying into the scratch space.
   fn parse_str_bytes<'s, T, F>(
     &'s mut self,
@@ -373,7 +373,7 @@ impl<'a> SliceRead<'a> {
       match self.slice[self.index] {
         b'"' => {
           if scratch.is_empty() {
-            // Fast path: return a slice of the raw JSON without any
+            // Fast path: return a slice of the raw SXP without any
             // copying.
             let borrowed = &self.slice[start..self.index];
             self.index += 1;
@@ -517,7 +517,7 @@ impl<'a> Read<'a> for SliceRead<'a> {
 //////////////////////////////////////////////////////////////////////////////
 
 impl<'a> StrRead<'a> {
-  /// Create a JSON input source to read from a UTF-8 string.
+  /// Create a SXP input source to read from a UTF-8 string.
   pub fn new(s: &'a str) -> Self {
     StrRead {
       delegate: SliceRead::new(s.as_bytes()),
@@ -714,7 +714,7 @@ fn as_str<'de, 's, R: Read<'de>>(read: &R, slice: &'s [u8]) -> Result<&'s str> {
     .or_else(|_| error(read, ErrorCode::InvalidUnicodeCodePoint))
 }
 
-/// Parses a JSON escape sequence and appends it into the scratch space. Assumes
+/// Parses a SXP escape sequence and appends it into the scratch space. Assumes
 /// the previous byte read was a backslash.
 fn parse_escape<'de, R: Read<'de>>(
   read: &mut R,
@@ -817,7 +817,7 @@ fn parse_escape<'de, R: Read<'de>>(
   Ok(())
 }
 
-/// Parses a JSON escape sequence and discards the value. Assumes the previous
+/// Parses a SXP escape sequence and discards the value. Assumes the previous
 /// byte read was a backslash.
 fn ignore_escape<'de, R>(read: &mut R) -> Result<()>
 where

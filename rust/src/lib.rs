@@ -49,21 +49,22 @@ macro_rules! tri {
   };
 }
 
-pub mod ast;
 pub mod de;
 pub mod fmt;
+pub mod form;
 pub mod iter;
 pub mod macs;
 pub mod read;
 pub mod ser;
 pub mod tok;
+
 pub use crate::de::{
   from_reader, from_slice, from_str, from_traits, Deserializer,
 };
 #[doc(inline)]
-pub use ast::Form;
-#[doc(inline)]
 pub use fmt::{DefaultFormatter, Formatter};
+#[doc(inline)]
+pub use form::Form;
 #[doc(inline)]
 pub use macs::{Macro, MacroObject, ReadTable, WriteTable};
 #[doc(inline)]

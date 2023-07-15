@@ -29,4 +29,5 @@ fn num_token() {
     Token::Num("123".to_owned())
   )
 }
+
 //  TODO 2023-07-09: tests for floats,potnum,etc

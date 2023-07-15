@@ -2,7 +2,7 @@
 use crate::read::{self, Fused, Reference};
 use crate::{
   err::ErrorCode,
-  fmt::{DefaultFormatter, Formatter},
+  fmt::{DefaultFormatter, ReadFormatter},
   Error, Result,
 };
 use alloc::string::String;
@@ -17,7 +17,7 @@ pub use crate::read::{Read, SliceRead, StrRead};
 #[cfg(feature = "std")]
 pub use crate::read::IoRead;
 
-pub struct Deserializer<R, F: Formatter> {
+pub struct Deserializer<R, F> {
   read: R,
   scratch: Vec<u8>,
   formatter: F,
@@ -25,7 +25,7 @@ pub struct Deserializer<R, F: Formatter> {
   unbound: bool,
 }
 
-impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
+impl<'de, R: Read<'de>, F: ReadFormatter<'de>> Deserializer<R, F> {
   pub fn new(read: R, formatter: F) -> Self {
     Deserializer {
       read,
@@ -53,14 +53,14 @@ impl<'de, R: Read<'de> + std::io::Read>
 }
 
 impl<'a> Deserializer<read::SliceRead<'a>, DefaultFormatter> {
-  /// Creates a JSON deserializer from a `&[u8]`.
+  /// Creates a SXP deserializer from a `&[u8]`.
   pub fn from_slice(bytes: &'a [u8]) -> Self {
     Deserializer::new(read::SliceRead::new(bytes), DefaultFormatter)
   }
 }
 
 impl<'a> Deserializer<read::StrRead<'a>, DefaultFormatter> {
-  /// Creates a JSON deserializer from a `&str`.
+  /// Creates a SXP deserializer from a `&str`.
   pub fn from_str(s: &'a str) -> Self {
     Deserializer::new(read::StrRead::new(s), DefaultFormatter)
   }
@@ -107,7 +107,7 @@ impl ParserNumber {
   }
 }
 
-impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
+impl<'de, R: Read<'de>, F: ReadFormatter<'de>> Deserializer<R, F> {
   /// The `Deserializer::end` method should be called after a value has been
   /// fully deserialized. This allows the `Deserializer` to validate that the
   /// input stream is at the end or that it only has trailing whitespace.
@@ -135,7 +135,8 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
     }
   }
 
-  /// Parse arbitrarily deep JSON structures without any consideration for
+  #[cfg(feature = "unbound")]
+  /// Parse arbitrarily deep SXP structures without any consideration for
   /// overflowing the stack.
   ///
   /// You will want to provide some other way to protect against stack
@@ -146,10 +147,8 @@ impl<'de, R: Read<'de>, F: Formatter> Deserializer<R, F> {
   /// completed, including, but not limited to, Display and Debug and Drop
   /// impls.
   ///
-  /// *This method is only available if serde_json is built with the
-  /// `"unbounded_depth"` feature.*
-  ///
-  /// # Examples
+  /// *This method is only available if sxp is built with the
+  /// `"unbound"` feature.*
   pub fn disable_recursion_limit(&mut self) {
     self.unbound = true;
   }
@@ -986,7 +985,7 @@ macro_rules! check_recursion {
     };
 }
 
-impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
+impl<'de, 'a, R: Read<'de>, F: ReadFormatter<'de>> de::Deserializer<'de>
   for &'a mut Deserializer<R, F>
 {
   type Error = Error;
@@ -1145,14 +1144,14 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
     self.deserialize_str(visitor)
   }
 
-  /// Parses a JSON string as bytes. Note that this function does not check
+  /// Parses a SXP string as bytes. Note that this function does not check
   /// whether the bytes represent a valid UTF-8 string.
   ///
-  /// The relevant part of the JSON specification is Section 8.2 of [RFC
+  /// The relevant part of the SXP specification is Section 8.2 of [RFC
   /// 7159]:
   ///
-  /// > When all the strings represented in a JSON text are composed entirely
-  /// > of Unicode characters (however escaped), then that JSON text is
+  /// > When all the strings represented in a SXP text are composed entirely
+  /// > of Unicode characters (however escaped), then that SXP text is
   /// > interoperable in the sense that all software implementations that
   /// > parse it will agree on the contents of names and of string values in
   /// > objects and arrays.
@@ -1162,14 +1161,14 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
   /// > for example, "\uDEAD" (a single unpaired UTF-16 surrogate). Instances
   /// > of this have been observed, for example, when a library truncates a
   /// > UTF-16 string without checking whether the truncation split a
-  /// > surrogate pair.  The behavior of software that receives JSON texts
+  /// > surrogate pair.  The behavior of software that receives SXP texts
   /// > containing such values is unpredictable; for example, implementations
   /// > might return different values for the length of a string value or even
   /// > suffer fatal runtime exceptions.
   ///
   /// [RFC 7159]: https://tools.ietf.org/html/rfc7159
   ///
-  /// The behavior of serde_json is specified to fail on non-UTF-8 strings
+  /// The behavior of sxp is specified to fail on non-UTF-8 strings
   /// when deserializing into Rust UTF-8 string types such as String, and
   /// succeed with non-UTF-8 bytes when deserializing using this method.
   ///
@@ -1450,18 +1449,18 @@ impl<'de, 'a, R: Read<'de>, F: Formatter> de::Deserializer<'de>
   }
 }
 
-struct SeqAccess<'a, R: 'a, F: Formatter> {
+struct SeqAccess<'a, R: 'a, F: 'a> {
   de: &'a mut Deserializer<R, F>,
   first: bool,
 }
 
-impl<'a, R: 'a, F: Formatter> SeqAccess<'a, R, F> {
+impl<'a, R: 'a, F: 'a> SeqAccess<'a, R, F> {
   fn new(de: &'a mut Deserializer<R, F>) -> Self {
     SeqAccess { de, first: true }
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::SeqAccess<'de>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::SeqAccess<'de>
   for SeqAccess<'a, R, F>
 {
   type Error = Error;
@@ -1492,19 +1491,19 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::SeqAccess<'de>
   }
 }
 
-struct MapAccess<'a, R: 'a, F: Formatter> {
+struct MapAccess<'a, R: 'a, F> {
   de: &'a mut Deserializer<R, F>,
   first: bool,
 }
 
-impl<'a, R: 'a, F: Formatter> MapAccess<'a, R, F> {
+impl<'a, R: 'a, F> MapAccess<'a, R, F> {
   fn new(de: &'a mut Deserializer<R, F>) -> Self {
     MapAccess { de, first: true }
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::MapAccess<'de>
-  for MapAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: for<'r> ReadFormatter<'r>>
+  de::MapAccess<'de> for MapAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1544,17 +1543,17 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::MapAccess<'de>
   }
 }
 
-struct VariantAccess<'a, R: 'a, F: Formatter> {
+struct VariantAccess<'a, R: 'a, F: 'a> {
   de: &'a mut Deserializer<R, F>,
 }
 
-impl<'a, R: 'a, F: Formatter> VariantAccess<'a, R, F> {
+impl<'a, R: 'a, F: 'a> VariantAccess<'a, R, F> {
   fn new(de: &'a mut Deserializer<R, F>) -> Self {
     VariantAccess { de }
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::EnumAccess<'de>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::EnumAccess<'de>
   for VariantAccess<'a, R, F>
 {
   type Error = Error;
@@ -1570,8 +1569,8 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::EnumAccess<'de>
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::VariantAccess<'de>
-  for VariantAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a>
+  de::VariantAccess<'de> for VariantAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1605,17 +1604,17 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::VariantAccess<'de>
   }
 }
 
-struct UnitVariantAccess<'a, R: 'a, F: Formatter> {
+struct UnitVariantAccess<'a, R: 'a, F: 'a> {
   de: &'a mut Deserializer<R, F>,
 }
 
-impl<'a, R: 'a, F: Formatter> UnitVariantAccess<'a, R, F> {
+impl<'a, R: 'a, F: 'a> UnitVariantAccess<'a, R, F> {
   fn new(de: &'a mut Deserializer<R, F>) -> Self {
     UnitVariantAccess { de }
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::EnumAccess<'de>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::EnumAccess<'de>
   for UnitVariantAccess<'a, R, F>
 {
   type Error = Error;
@@ -1630,8 +1629,8 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::EnumAccess<'de>
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::VariantAccess<'de>
-  for UnitVariantAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a>
+  de::VariantAccess<'de> for UnitVariantAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1675,8 +1674,8 @@ impl<'de, 'a, R: Read<'de> + 'a, F: Formatter> de::VariantAccess<'de>
 }
 
 /// Only deserialize from this after peeking a '"' byte! Otherwise it may
-/// deserialize invalid JSON successfully.
-struct MapKey<'a, R: 'a, F: Formatter> {
+/// deserialize invalid SXP successfully.
+struct MapKey<'a, R: 'a, F: ReadFormatter<'a>> {
   de: &'a mut Deserializer<R, F>,
 }
 
@@ -1717,12 +1716,13 @@ macro_rules! deserialize_numeric_key {
 impl<'de, 'a, R, F> MapKey<'a, R, F>
 where
   R: Read<'de>,
-  F: Formatter,
+  F: ReadFormatter<'a>,
 {
   deserialize_numeric_key!(deserialize_number, deserialize_number);
 }
 
-impl<'de, 'a, R, F: Formatter> de::Deserializer<'de> for MapKey<'a, R, F>
+impl<'de, 'a, R, F: ReadFormatter<'a>> de::Deserializer<'de>
+  for MapKey<'a, R, F>
 where
   R: Read<'de>,
 {
@@ -1813,15 +1813,15 @@ where
 
 //////////////////////////////////////////////////////////////////////////////
 
-/// Iterator that deserializes a stream into multiple JSON values.
+/// Iterator that deserializes a stream into multiple SXP values.
 ///
-/// A stream deserializer can be created from any JSON deserializer using the
+/// A stream deserializer can be created from any SXP deserializer using the
 /// `Deserializer::into_iter` method.
 ///
-/// The data can consist of any JSON value. Values need to be a self-delineating
+/// The data can consist of any SXP value. Values need to be a self-delineating
 /// value e.g. arrays, objects, or strings, or be followed by whitespace or a
 /// self-delineating value.
-pub struct StreamDeserializer<'de, R, F: Formatter, T> {
+pub struct StreamDeserializer<'de, R, F: ReadFormatter<'de>, T> {
   de: Deserializer<R, F>,
   offset: usize,
   failed: bool,
@@ -1833,9 +1833,9 @@ impl<'de, R, F, T> StreamDeserializer<'de, R, F, T>
 where
   R: read::Read<'de>,
   T: de::Deserialize<'de>,
-  F: Formatter,
+  F: ReadFormatter<'de>,
 {
-  /// Create a JSON stream deserializer from one of the possible serde_json
+  /// Create a SXP stream deserializer from one of the possible sxp
   /// input sources.
   ///
   /// Typically it is more convenient to use one of these methods instead:
@@ -1882,7 +1882,7 @@ impl<'de, R, F, T> Iterator for StreamDeserializer<'de, R, F, T>
 where
   R: Read<'de>,
   T: de::Deserialize<'de>,
-  F: Formatter,
+  F: ReadFormatter<'de>,
 {
   type Item = Result<T>;
 
@@ -1937,11 +1937,16 @@ impl<'de, R, F, T> FusedIterator for StreamDeserializer<'de, R, F, T>
 where
   R: Read<'de> + Fused,
   T: de::Deserialize<'de>,
-  F: Formatter,
+  F: ReadFormatter<'de>,
 {
 }
 
-pub fn from_traits<'de, R: Read<'de>, F: Formatter, T: de::Deserialize<'de>>(
+pub fn from_traits<
+  'de,
+  R: Read<'de>,
+  F: ReadFormatter<'de>,
+  T: de::Deserialize<'de>,
+>(
   r: R,
   f: F,
 ) -> Result<T> {

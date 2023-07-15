@@ -356,64 +356,102 @@ streams into Tokens.
 The reference implementation is located in the =rust= folder of this
 project. It leverages the serde ecosystem and includes a full
 test-suite as specified in the previous section.
+#+name: rust-loc
+#+begin_src sh :results replace output :exports both
+  cd rust && tokei -t=Rust
+#+end_src
+
+#+RESULTS: rust-loc
+: ===============================================================================
+:  Language            Files        Lines         Code     Comments       Blanks
+: ===============================================================================
+:  Rust                   21         5550         5048          121          381
+:  |- Markdown            14          259           16          222           21
+:  (Total)                           5809         5064          343          402
+: ===============================================================================
+:  Total                  21         5550         5048          121          381
+: ===============================================================================
+
+#+RESULTS:
+: ===============================================================================
+:  Language            Files        Lines         Code     Comments       Blanks
+: ===============================================================================
+:  Rust                   21         5550         5048          121          381
+:  |- Markdown            14          259           16          222           21
+:  (Total)                           5809         5064          343          402
+: ===============================================================================
+:  Total                  21         5550         5048          121          381
+: ===============================================================================
+
+#+name: rust-files
+#+begin_src shell :shebang #!/usr/bin/env nu :results output replace :exports both
+cd rust ; print "SRC FILES\n" ; ls src | print
+print "TEST FILES\n" ; ls tests | print
+#+end_src
+
+#+RESULTS: rust-files
+#+begin_example
+SRC FILES
+
+╭────┬──────────────┬──────┬──────────┬────────────────╮
+│  # │     name     │ type │   size   │    modified    │
+├────┼──────────────┼──────┼──────────┼────────────────┤
+│  0 │ src/de.rs    │ file │ 51.1 KiB │ 12 minutes ago │
+│  1 │ src/err.rs   │ file │ 12.3 KiB │ 2 hours ago    │
+│  2 │ src/fmt.rs   │ file │  8.5 KiB │ 27 minutes ago │
+│  3 │ src/form.rs  │ file │    406 B │ 4 days ago     │
+│  4 │ src/io.rs    │ file │    271 B │ 5 days ago     │
+│  5 │ src/iter.rs  │ file │  1.7 KiB │ a day ago      │
+│  6 │ src/lib.rs   │ file │  3.4 KiB │ 3 hours ago    │
+│  7 │ src/macs.rs  │ file │    289 B │ 3 hours ago    │
+│  8 │ src/nostd.rs │ file │  1.6 KiB │ 5 days ago     │
+│  9 │ src/read.rs  │ file │ 23.5 KiB │ 2 hours ago    │
+│ 10 │ src/ser.rs   │ file │ 22.9 KiB │ 2 hours ago    │
+│ 11 │ src/tok.rs   │ file │ 16.0 KiB │ 9 minutes ago  │
+╰────┴──────────────┴──────┴──────────┴────────────────╯
+
+TEST FILES
+
+╭───┬───────────────┬──────┬─────────┬─────────────╮
+│ # │     name      │ type │  size   │  modified   │
+├───┼───────────────┼──────┼─────────┼─────────────┤
+│ 0 │ tests/de.rs   │ file │ 2.8 KiB │ 2 hours ago │
+│ 1 │ tests/fmt.rs  │ file │ 1.4 KiB │ 2 days ago  │
+│ 2 │ tests/form.rs │ file │   150 B │ 2 hours ago │
+│ 3 │ tests/macs.rs │ file │     1 B │ 5 days ago  │
+│ 4 │ tests/ser.rs  │ file │ 1.6 KiB │ 2 hours ago │
+│ 5 │ tests/tok.rs  │ file │   638 B │ 2 hours ago │
+╰───┴───────────────┴──────┴─────────┴─────────────╯
+
+#+end_example
+
+#+RESULTS: rust-src-files
+#+begin_example
+╭────┬──────────┬──────┬──────────┬────────────────╮
+│  # │   name   │ type │   size   │    modified    │
+├────┼──────────┼──────┼──────────┼────────────────┤
+│  0 │ de.rs    │ file │ 51.1 KiB │ 9 minutes ago  │
+│  1 │ err.rs   │ file │ 12.3 KiB │ 2 hours ago    │
+│  2 │ fmt.rs   │ file │  8.5 KiB │ 25 minutes ago │
+│  3 │ form.rs  │ file │    406 B │ 4 days ago     │
+│  4 │ io.rs    │ file │    271 B │ 5 days ago     │
+│  5 │ iter.rs  │ file │  1.7 KiB │ a day ago      │
+│  6 │ lib.rs   │ file │  3.4 KiB │ 3 hours ago    │
+│  7 │ macs.rs  │ file │    289 B │ 3 hours ago    │
+│  8 │ nostd.rs │ file │  1.6 KiB │ 5 days ago     │
+│  9 │ read.rs  │ file │ 23.5 KiB │ 2 hours ago    │
+│ 10 │ ser.rs   │ file │ 22.9 KiB │ 2 hours ago    │
+│ 11 │ tok.rs   │ file │ 16.0 KiB │ 7 minutes ago  │
+╰────┴──────────┴──────┴──────────┴────────────────╯
+#+end_example
+
+*TESTS*
+
 ** test output
-#+name: run-rust-tests
+#+name: rust-test
 #+begin_src shell :results output replace :shebang #!/usr/bin/env nu :exports both
   cd rust
   cargo test -vv --all-targets -j8 -- --nocapture
 #+end_src
 
 #+RESULTS: run-rust-tests
-#+begin_example
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 5 tests
-test list_ast ... ok
-test nil_ast ... ok
-test num_ast ... ok
-test str_ast ... ok
-test sym_ast ... ok
-
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 1 test
-test de_ast ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 1 test
-test canonical_fmt ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 3 tests
-test ser_ast ... ok
-test ser_enum ... ok
-test ser_struct ... ok
-
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-
-running 6 tests
-test dot_token ... ok
-test str_token ... ok
-test num_token ... ok
-test list_end_token ... ok
-test list_start_token ... ok
-test sym_token ... ok
-
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-#+end_example

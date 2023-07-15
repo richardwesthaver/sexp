@@ -1,5 +1,5 @@
 //! ser.rs --- SXP Serializer
-use crate::fmt::{DefaultFormatter, Formatter};
+use crate::fmt::{DefaultFormatter, WriteFormatter};
 use crate::tok::{format_escaped_str, format_escaped_str_contents};
 use crate::{err::ErrorCode, Error, Result};
 use core::fmt::{self, Display};
@@ -44,7 +44,8 @@ impl<W: Write> Serializer<W> {
     Serializer::with_formatter(writer, DefaultFormatter)
   }
 }
-impl<W: Write, F: Formatter> Serializer<W, F> {
+
+impl<W: Write, F: WriteFormatter> Serializer<W, F> {
   fn with_formatter(writer: W, formatter: F) -> Self {
     Serializer { writer, formatter }
   }
@@ -63,7 +64,7 @@ impl<W: Write, F: Formatter> Serializer<W, F> {
 
 // impl<'a, W:Write> Serializer<W, PrettyFormatter<'a>> {...}
 
-impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
+impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
   for &'ser mut Serializer<W, F>
 {
   type Ok = (); // could be usize for bytes written
@@ -427,7 +428,7 @@ impl<'ser, W: Write, F: Formatter> serde::ser::Serializer
     impl<'ser, W, F> Write for Adapter<'ser, W, F>
     where
       W: io::Write,
-      F: Formatter,
+      F: WriteFormatter,
     {
       fn write_str(&mut self, s: &str) -> fmt::Result {
         debug_assert!(self.error.is_none());
@@ -481,7 +482,7 @@ pub struct Seq<'a, W: 'a, F: 'a> {
   state: State,
 }
 
-impl<'ser, W: Write, F: Formatter> ser::SerializeSeq for Seq<'ser, W, F> {
+impl<'ser, W: Write, F: WriteFormatter> ser::SerializeSeq for Seq<'ser, W, F> {
   type Ok = ();
   type Error = Error;
   #[inline]
@@ -514,7 +515,9 @@ impl<'ser, W: Write, F: Formatter> ser::SerializeSeq for Seq<'ser, W, F> {
   }
 }
 
-impl<'ser, W: Write, F: Formatter> ser::SerializeTuple for Seq<'ser, W, F> {
+impl<'ser, W: Write, F: WriteFormatter> ser::SerializeTuple
+  for Seq<'ser, W, F>
+{
   type Ok = ();
   type Error = Error;
   #[inline]
@@ -533,7 +536,7 @@ impl<'ser, W: Write, F: Formatter> ser::SerializeTuple for Seq<'ser, W, F> {
 impl<'a, W, F> ser::SerializeTupleStruct for Seq<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;
@@ -567,7 +570,7 @@ where
 impl<'a, W, F> ser::SerializeTupleVariant for Seq<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;
@@ -595,7 +598,7 @@ where
 impl<'a, W, F> ser::SerializeMap for Seq<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;
@@ -645,7 +648,7 @@ where
 impl<'a, W, F> ser::SerializeStruct for Seq<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;
@@ -667,7 +670,7 @@ where
 impl<'a, W, F> ser::SerializeStructVariant for Seq<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;
@@ -719,7 +722,7 @@ struct SymbolSerializer<'a, W: 'a, F: 'a>(&'a mut Serializer<W, F>);
 impl<'a, W, F> ser::Serializer for SymbolSerializer<'a, W, F>
 where
   W: io::Write,
-  F: Formatter,
+  F: WriteFormatter,
 {
   type Ok = ();
   type Error = Error;

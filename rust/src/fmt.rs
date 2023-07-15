@@ -1,6 +1,8 @@
 //! fmt.rs --- SXP Formatters
+use crate::io::{self, Write};
+use crate::read::Read;
 use crate::tok::CharEscape;
-use std::io::{self, Write}; //TODO : Read
+use crate::Result;
 
 pub fn indent<W: ?Sized + io::Write>(
   wr: &mut W,
@@ -13,7 +15,7 @@ pub fn indent<W: ?Sized + io::Write>(
   Ok(())
 }
 
-pub trait Formatter {
+pub trait WriteFormatter {
   /// Write a 'nil' value to the specified writer.
   #[inline]
   fn write_nil<W: ?Sized + Write>(&mut self, writer: &mut W) -> io::Result<()> {
@@ -297,11 +299,33 @@ pub trait Formatter {
   }
 }
 
+/// The ReadFormatter is the sister interface to WriteFormatter.
+pub trait ReadFormatter<'a> {
+  #[inline]
+  fn peek<R: ?Sized + Read<'a>>(
+    &mut self,
+    reader: &'a mut R,
+  ) -> Result<Option<u8>> {
+    reader.peek()
+  }
+  // /// Read a 'nil' value from the specified reader.
+  // #[inline]
+  // fn read_nil<R:?Sized+Read<'a>>(&mut self, reader: &'a R) -> io::Result<()>
+  // {   reader
+  // }
+}
+
+pub trait Formatter<'a>: ReadFormatter<'a> + WriteFormatter {}
+impl<'a, T: ReadFormatter<'a> + WriteFormatter> Formatter<'a> for T {}
+
 pub struct DefaultFormatter;
-impl Formatter for DefaultFormatter {}
+impl<'a> ReadFormatter<'a> for DefaultFormatter {}
+impl WriteFormatter for DefaultFormatter {}
 
 pub struct BinaryFormatter;
-impl Formatter for BinaryFormatter {}
+impl<'a> ReadFormatter<'a> for BinaryFormatter {}
+impl WriteFormatter for BinaryFormatter {}
 
 pub struct PrettyFormatter;
-impl Formatter for PrettyFormatter {}
+impl<'a> ReadFormatter<'a> for PrettyFormatter {}
+impl WriteFormatter for PrettyFormatter {}

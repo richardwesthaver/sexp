@@ -2,7 +2,7 @@
 /// all possible Tokens. Note that we do not explicitly declare a
 /// 'nil' variant. The modern rules of S-expressions are implicit in
 /// the SXP specification.
-use crate::{fmt::Formatter, Error};
+use crate::{fmt::WriteFormatter, Error};
 use serde::de::{self, Unexpected, Visitor};
 use serde::{
   forward_to_deserialize_any, Deserialize, Deserializer, Serialize, Serializer,
@@ -207,7 +207,7 @@ impl Num {
     // self.n.parse::<f64>().ok().filter(|float| float.is_finite())
   }
 
-  /// Converts a finite `f64` to a `Number`. Infinite or NaN values are not JSON
+  /// Converts a finite `f64` to a `Number`. Infinite or NaN values are not SXP
   /// numbers.
   #[inline]
   pub fn from_f64(f: f64) -> Option<Num> {
@@ -498,7 +498,7 @@ pub fn format_escaped_str<W, F>(
 ) -> io::Result<()>
 where
   W: ?Sized + Write,
-  F: ?Sized + Formatter,
+  F: ?Sized + WriteFormatter,
 {
   tri!(formatter.begin_string(writer));
   tri!(format_escaped_str_contents(writer, formatter, value));
@@ -512,7 +512,7 @@ pub fn format_escaped_str_contents<W, F>(
 ) -> io::Result<()>
 where
   W: ?Sized + io::Write,
-  F: ?Sized + Formatter,
+  F: ?Sized + WriteFormatter,
 {
   let bytes = value.as_bytes();
 

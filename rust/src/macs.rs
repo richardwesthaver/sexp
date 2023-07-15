@@ -1,5 +1,5 @@
 //! macs.rs --- SEXP Macro support
-use crate::ast::Form;
+use crate::form::Form;
 use std::collections::HashMap;
 pub type Macro = dyn FnMut(&mut Form);
 pub type MacroObject = Box<Macro>;
