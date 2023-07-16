@@ -8,6 +8,7 @@
   :bug-tracker "https://lab.rwest.io/comp/sxp/issues"
   :source-control (:hg "https://lab.rwest.io/comp/sxp")
   :license "WTF"
+  :depends-on ("alexandria")
   :in-order-to ((test-op (test-op "tests")))
   :build-pathname "sxp"
   :components ((:file "sxp")))
