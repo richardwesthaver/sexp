@@ -1,4 +1,4 @@
-//! read.rs --- SXP reader primitives
+//! read.rs --- sxp reader
 use crate::{err::ErrorCode, Error, Result};
 use alloc::vec::Vec;
 use core::char;

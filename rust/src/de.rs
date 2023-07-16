@@ -17,7 +17,7 @@ pub use crate::read::{Read, SliceRead, StrRead};
 #[cfg(feature = "std")]
 pub use crate::read::IoRead;
 
-pub struct Deserializer<R, F> {
+pub struct Deserializer<R,F> {
   read: R,
   scratch: Vec<u8>,
   formatter: F,
@@ -1502,8 +1502,8 @@ impl<'a, R: 'a, F> MapAccess<'a, R, F> {
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: for<'r> ReadFormatter<'r>>
-  de::MapAccess<'de> for MapAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: for<'r> ReadFormatter<'r>> de::MapAccess<'de>
+  for MapAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1569,8 +1569,8 @@ impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::EnumAccess<'de>
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a>
-  de::VariantAccess<'de> for VariantAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::VariantAccess<'de>
+  for VariantAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1629,8 +1629,8 @@ impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::EnumAccess<'de>
   }
 }
 
-impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a>
-  de::VariantAccess<'de> for UnitVariantAccess<'a, R, F>
+impl<'de, 'a, R: Read<'de> + 'a, F: ReadFormatter<'de> + 'a> de::VariantAccess<'de>
+  for UnitVariantAccess<'a, R, F>
 {
   type Error = Error;
 
@@ -1721,8 +1721,7 @@ where
   deserialize_numeric_key!(deserialize_number, deserialize_number);
 }
 
-impl<'de, 'a, R, F: ReadFormatter<'a>> de::Deserializer<'de>
-  for MapKey<'a, R, F>
+impl<'de, 'a, R, F: ReadFormatter<'a>> de::Deserializer<'de> for MapKey<'a, R, F>
 where
   R: Read<'de>,
 {
@@ -1941,12 +1940,7 @@ where
 {
 }
 
-pub fn from_traits<
-  'de,
-  R: Read<'de>,
-  F: ReadFormatter<'de>,
-  T: de::Deserialize<'de>,
->(
+pub fn from_traits<'de, R: Read<'de>, F: ReadFormatter<'de>, T: de::Deserialize<'de>>(
   r: R,
   f: F,
 ) -> Result<T> {

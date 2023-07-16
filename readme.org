@@ -107,7 +107,7 @@ extended definition *SXP*.
 
 [fn:1] There are good reasons for needing Lisp, just not in this case.
 
-* Portable Data
+** Portable Data
 Portable Data is a difficult phrase to define, but we'll take a stab
 at it:
 
@@ -127,7 +127,7 @@ The canonical example today would likely be JSON - originally
 developed for the Javascript language and ranking reasonably high
 across all properties.
 
-* Meta Data
+** Meta Data
 There is another category; one which we will call Meta Data. It is a
 slight modification of the word 'Metadata' meaning 'data about data':
 
@@ -180,29 +180,6 @@ actually and I'm excited to test it further.
 
 For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
 Rosetta Code]].
-** Tokens
-We explicitly define tokens as demonstrated in the implementation
-section. SXPs are intended to be read and written from a stream of
-bytes, so it makes sense to have as low-level of a representation of
-individual characters in an S-expression as possible.
-*** ListStart
-The list starting character is typically =(=.
-*** ListEnd
-The List ending character is typically =)=.
-*** COMMENT KeySymbol
-A character which designates the start of a slot 'key' symbol,
-typically =:=.
-*** COMMENT ReaderSymbol
-A character which designates that the next character is a 'read'
-symbol, typically =#=.
-*** COMMENT BackQuote
-*** COMMENT Quote
-*** Symbol
-Just a plain unquoted string, such as =foo=. 
-*** String
-A string which prints with quotes, ="foo"=
-*** Number
-A string which contains numeric characters (Potential Number)
 ** Atoms
 Atoms are the indivisible units of a SXP -- they are used as the
 internal representation of our data which is manipulated in the
@@ -324,7 +301,7 @@ raw->tok) and ~format-output~ (serialize, tok->raw).
 All formatters are mutually exclusive - an S-expression read with a
 specific formatter must be written with the methods of that same
 formatter.
-*** Canonical
+*** Default
 For now, I would like to use UTF-8 Strings as the canonical (default)
 format. This is a re-definition of the term originally attributed to a
 compact binary specification (see prior art). No new lines - only
@@ -344,10 +321,9 @@ benchmarking an implementation as shown in the reference
 implementation.
 - test data ::
   - =./tests.sxp=
-*** token tests
+*** parser tests
 SXP implementations are required to convert data from arbitrary
-streams into Tokens.
-*** ast tests
+streams into an internal Tree representation.
 *** serialization tests
 *** deserialization tests
 *** formatter tests
@@ -445,9 +421,7 @@ TEST FILES
 ╰────┴──────────┴──────┴──────────┴────────────────╯
 #+end_example
 
-*TESTS*
-
-** test output
+** tests
 #+name: rust-test
 #+begin_src shell :results output replace :shebang #!/usr/bin/env nu :exports both
   cd rust
@@ -455,3 +429,21 @@ TEST FILES
 #+end_src
 
 #+RESULTS: run-rust-tests
+
+** examples
+*** udp
+This example shows a basic network example which used SXP as the data
+exchange format. You should run an instance of it in two separate
+terminals to see the effects of serialization.
+#+begin_src sh
+  cargo run --example udp 8765
+  # in another shell
+  cargo run --example udp 8766 8765
+#+end_src
+
+#+begin_example
+(:id 1 :key "\n���\u0017�2��\t�Zo����p���\u001f�^bG�k�\\ߖ" :payload (0.8739031788256151 0.1771574880771607 0.03755418751921791 0.0830789940011788 0.25999368753618635 0.7759811623689914 0.377905715625487 0.6345103836577041 0.9280487838838453 0.05632381798743469 0.47706941126106617 0.8630071004646652 0.3105367297573872 0.9638316414175672 0.9654394218166857 0.0960356381113201 0.5948876380109583 0.008619085472148957 0.6972437660928477 0.9956387178318982 0.8393661712357147 0.026006527729574347 0.18933612631846053 0.4658786468455528 0.6120269120388118 0.6799305559125147 0.4786783590209269 0.5468187309042902 0.7516485541529964 0.9640651422693095 0.8131540890045137 0.05743081471017575))
+(:id 2 :key "܇n�X�\u0016��\u0011�|w��\u001c�tex�`�Beo3�����" :payload (0.014856226454673549 0.6702861790951982 0.8235206974459348 0.6124713202885237 0.253919658282998 0.24875903256773413 0.4904138875177353 0.5537123036987349 0.9920025280418244 0.7964545899597759 0.5153814811979214 0.9973232205716195 0.16431485741870144 0.05187173892574937 0.7518792564089343 0.39048883728773587 0.1201476618851095 0.7742171756709769 0.32517551295944525 0.6370041691338797 0.29961162890042525 0.3088199026426365 0.16149301204961397 0.12717608917477208 0.28539724001716305 0.19111150731484594 0.16116319138709223 0.21695737106587532 0.3694178306438769 0.5704838578555591 0.4015937765848465 0.4534098319855393))
+(:id 3 :key "od�s���{�\t�\u0016�\"\u0007�{<K���O���\u000bs��#\u0004" :payload (0.5988960943914401 0.18507424718905252 0.5066858621969329 0.27237868503536233 0.7889265093317402 0.8003426474329407 0.8029753091140293 0.23018429888116942 0.6220222102084081 0.6035229536781057 0.21460422291936299 0.20473839314063358 0.6230553158310311 0.8176107505641151 0.33376990736027745 0.5472771996439204 0.013756761117554639 0.362542310894191 0.23198218329151443 0.9807665214331935 0.8475009571273702 0.3179886946114975 0.8472699063062974 0.541594646958305 0.47297569792693883 0.2127092570608261 0.7382601315774998 0.6504966714809076 0.6206151994181767 0.8116706208036837 0.9223858519359078 0.40749529457577893))
+(:id 4 :key "�k���,ܬ\u0005�ĺ\u0012�Y��\u0006}r!!��\u0018�`�/d�0" :payload (0.9926646483886535 0.04957913627550603 0.42501054802544724 0.6781155309850084 0.7488395990975232 0.12480437219134854 0.10368924105933253 0.12432160945673953 0.4292784007510758 0.07930439320824811 0.9928754832618009 0.9398896399172157 0.7857588766640731 0.8879130212960369 0.5182342888846501 0.523730438771649 0.48472768121039833 0.947544728574599 0.21729738216462635 0.29655873380009157 0.8122432664243706 0.2440411601862399 0.9521903618713258 0.6537431169922238 0.816525253650528 0.2612954660003107 0.1865916410218087 0.3842286630646984 0.9084756918516721 0.9518635753352582 0.33045307514389477 0.04210025808991458))
+#+end_example

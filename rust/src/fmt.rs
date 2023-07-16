@@ -300,32 +300,33 @@ pub trait WriteFormatter {
 }
 
 /// The ReadFormatter is the sister interface to WriteFormatter.
-pub trait ReadFormatter<'a> {
+pub trait ReadFormatter<'r>: Read<'r> {
   #[inline]
-  fn peek<R: ?Sized + Read<'a>>(
+  fn peek<R: ?Sized + Read<'r>>(
     &mut self,
-    reader: &'a mut R,
+    reader: &'r mut R,
   ) -> Result<Option<u8>> {
     reader.peek()
   }
+
   // /// Read a 'nil' value from the specified reader.
   // #[inline]
-  // fn read_nil<R:?Sized+Read<'a>>(&mut self, reader: &'a R) -> io::Result<()>
+  // fn read_nil<R:?Sized+Read<'r>>(&mut self, reader: &'r R) -> io::Result<()>
   // {   reader
   // }
 }
 
-pub trait Formatter<'a>: ReadFormatter<'a> + WriteFormatter {}
-impl<'a, T: ReadFormatter<'a> + WriteFormatter> Formatter<'a> for T {}
+pub trait Formatter<'r>: ReadFormatter<'r> + WriteFormatter {}
+impl<'r, T: ReadFormatter<'r> + WriteFormatter> Formatter<'r> for T {}
 
 pub struct DefaultFormatter;
-impl<'a> ReadFormatter<'a> for DefaultFormatter {}
+// impl<'r> ReadFormatter<'r> for DefaultFormatter {}
 impl WriteFormatter for DefaultFormatter {}
 
 pub struct BinaryFormatter;
-impl<'a> ReadFormatter<'a> for BinaryFormatter {}
+// impl<'r> ReadFormatter<'r> for BinaryFormatter {}
 impl WriteFormatter for BinaryFormatter {}
 
 pub struct PrettyFormatter;
-impl<'a> ReadFormatter<'a> for PrettyFormatter {}
+// impl<'r> ReadFormatter<'r> for PrettyFormatter {}
 impl WriteFormatter for PrettyFormatter {}
