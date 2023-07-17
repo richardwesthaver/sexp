@@ -1,7 +1,7 @@
 ;;; sexp.lisp --- SEXP
 (defpackage :sxp
   (:use :cl :alexandria)
-  (:export :read-table :write-table :form :reader :writer :fmt))
+  (:export :read-table :write-table :form :reader :writer :fmt :define-macro :define-fmt))
 
 (in-package :sxp)
 

@@ -31,6 +31,8 @@
 ;;; OOP
 (require 'eieio)
 
+(defclass sxp () () :abstract t)
+
 (cl-defgeneric from-sxp (obj sxp)
   "Update OBJ using values from SXP.")
 (cl-defgeneric to-sxp (obj)
@@ -42,18 +44,36 @@
   "Write S-Expressions directly to STREAM (default =
   `standard-output') with optional COMMENT.")
 
+(defclass form (sxp)
+  ((form :initarg :form :accessor form)))
+
+(cl-defmethod from-sxp ((obj form) sxp)
+  (initialize-instance obj (list :form sxp))
+  obj)
+(cl-defmethod to-sxp ((obj form))
+  (oref obj :form))
+(cl-defmethod read-sxp ((obj form) &optional stream)
+  (initialize-instance obj (list :form (read stream)))
+  obj)
+(cl-defmethod write-sxp ((obj form) &optional stream)
+  (print (to-sxp obj) stream))
+
 (with-eval-after-load "ert"
-  (ert-deftest sxp:read()
+  (defmacro deftest (name &rest body)
+    "shorthand for `ert-deftest'."
+    (declare (indent 1))
+    `(ert-deftest ,name () :tags '(sxp) ,@body))
+  (deftest sxp:read
+    (should (read-sxp (form) "(hey stranger)")))
+  (deftest sxp:write
+    (should (write-sxp (form :form nil))))
+  (deftest sxp:from
+    (should (from-sxp (form) '(test 1 2 3))))
+  (deftest sxp:to
+    (should (to-sxp (form :form '("test" 'ing)))))
+  (deftest sxp:fmt
     (should t))
-  (ert-deftest sxp:write()
-    (should t))
-  (ert-deftest sxp:from()
-    (should t))
-  (ert-deftest sxp:to()
-    (should t))
-  (ert-deftest sxp:fmt()
-    (should t))
-  (ert-deftest sxp:mode()
+  (deftest sxp:mode
     (should t)))
 
 (provide 'sxp)
