@@ -26,17 +26,8 @@
       - additional formatter/encoder methods
   - [+] should the reference impl (rust) enum =Sexp= (valid ast types) be
     renamed? maybe to =Form=? something else?
-* Abstract
-This document defines the SXP data format. It is intended for
-application and library developers who wish to use S-Expressions as a
-general purpose data format.
-
-Some background is provided before we describe the implementation
-details in full, followed by the reference implementations contained
-in the repository. We conclude with some basic usage examples and
-ideas for the future.
-
-* Introduction
+* Overview
+** Introduction
 [[https://en.wikipedia.org/wiki/S-expression][S-expressions]] are tree-like data structures classically defined as:
 1. an atom of the form ~x~, or
 2. a cons cell of the form ~(x . y)~ where x and y are
@@ -152,185 +143,37 @@ The point I will argue from here is that neither XML nor JSON have
 found the optimal point at which the ability to describe data types
 and structures is maximized. In other words, XML and JSON are not
 powerful enough.
-* SXP
-S-eXPressions[fn:2].
+** Prior Art
+- [[file:draft-rivest-sexp-00.txt][draft-rivest-sexp-00.txt]]
+  - focus is on an exact binary format which is referred to as the
+    Canonical representation. There are additional representations
+    available through custom printer modes.
+- [[https://twisted.org/documents/16.1.1/core/specifications/banana.html][Banana]]
+  - extensible /transport/ protocol for sending and receiving
+    S-expressions. binary format using tagged values.
+- [[https://github.com/mjsottile/sfsexp][sfsexp]]
+  - C/C++
+- examples: [[https://rosettacode.org/wiki/S-expressions][S-expressions on Rosetta Code]].
 
-[fn:2]  Pronounced 'es-ex-pee' not 'sex-pee' 
-** Overview
-*SXP* is an attempt at making S-Expressions into a robust /meta data
- format/. It consists of the modern rules of S-Expression described in
- the introduction (nil is defined, we can omit dots), a set of
- well-defined tokens and atoms, a list type, a formatter, and a
- framework for extending the /reader/ and /writer/ of any given SXP
- implementation via macros.
-*** Prior Art
-The sections preceeding this one were written without doing any
-research really, but I did find a relevant proposal: see
-[[file:draft-rivest-sexp-00.txt][draft-rivest-sexp-00.txt]]. It's the same idea with a different
-approach - the focus is on an exact binary format which is referred to
-as the Canonical representation. There are additional representations
-available through custom printer modes.
+* Implementations
+** Common Lisp
+The Common Lisp implementation is in the root directory. The default
+implementation uses =read= and =print= functions. A =esrap-impl= is
+also provided using the =esrap= parsing library.
 
-There is also something called [[https://twisted.org/documents/16.1.1/core/specifications/banana.html][Banana]] which is an extensible
-/transport/ protocol for sending and receiving S-expressions. Again
-quite similar - binary format using tagged values.
+#+name: sxp-cl-tests
+#+begin_src shell
+#+end_src
 
-A C++/C library called [[https://github.com/mjsottile/sfsexp][sfsexp]] is available. It looks quite good
-actually and I'm excited to test it further.
-
-For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
-Rosetta Code]].
-** Atoms
-Atoms are the indivisible units of a SXP -- they are used as the
-internal representation of our data which is manipulated in the
-structures supported by a given implementation.
-*** Numbers
-#+begin_example
-numeric-token  ::=  integer |
-				   ratio   |
-				   float       
-integer        ::=  [sign]
-				   decimal-digit+
-				   decimal-point |
-				   [sign]
-				   digit+      
-ratio          ::=  [sign]
-				   {digit}+
-				   slash
-				   {digit}+    
-float          ::=  [sign]
-				   {decimal-digit}*
-				   decimal-point
-				   {decimal-digit}+
-				   [exponent]  
-                    | 
-				   [sign]
-				   {decimal-digit}+
-				   [decimal-point
-					   {decimal-digit}*]
-				   exponent    
-exponent       ::=  exponent-marker
-				   [sign]
-				   {digit}+    
-                                       
-sign---a sign.                         
-slash---a slash                        
-decimal-point---a dot.                        
-exponent-marker---an exponent marker.                        
-decimal-digit---a digit in radix 10.                        
-digit---a digit in the current input radix.  
-#+end_example
-see also: [[http://clhs.lisp.se/Body/02_caa.htm][potential numbers]]
-*** Strings
-[[http://clhs.lisp.se/Body/02_de.htm][CLHS]] 
-#+begin_example
-  The double-quote is used to begin and end a string. When a
-  double-quote is encountered, characters are read from the input stream
-  and accumulated until another double-quote is encountered. If a single
-  escape character is seen, the single escape character is discarded,
-  the next character is accumulated, and accumulation continues. The
-  accumulated characters up to but not including the matching
-  double-quote are made into a simple string and returned. It is
-  implementation-dependent which attributes of the accumulated
-  characters are removed in this process.
-
-  Examples of the use of the double-quote character are in the next
-  figure.
-
-  "Foo"                      ;A string with three characters in it  
-  ""                         ;An empty string                       
-  "\"APL\\360?\" he cried."  ;A string with twenty characters       
-  "|x| = |-x|"               ;A ten-character string   
-#+end_example
-*** Symbols
-[[http://clhs.lisp.se/Body/02_cd.htm][CLHS]]
-#+begin_example
-  Any token that is not a potential number, does not contain a package
-  marker, and does not consist entirely of dots will always be
-  interpreted as a symbol. Any token that is a potential number but does
-  not fit the number syntax is a reserved token and has an
-  implementation-dependent interpretation. In all other cases, the token
-  is construed to be the name of a symbol.
-#+end_example
-** Lists
-** Macros
-Macros are the mechanism by which a SXP reader and writer are
-extended. They are driven by individual function lookup tables -
-referred to as the ~readtable~ and ~writetable~ respectively. These
-tables are indexed separately but store the same core 'Macro' type.
-
-Macros receive and return a single S-Expression object, but are used
-by the parser in different ways.
-
-*** Reader Macros
-Reader Macros occur during /deserialization/. When the unquoted =#=
-character is encountered, the next character is matched against a
-hashtable of /read symbols/ and the corresponding function is called
-on the remainder of the input or until control is returned to the
-Deserializer.  See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
-*** Writer Macros
-Writer Macros occur during /serialization/ before being passed to the
-output formatter/writer. They allow for transformations of SXPs in
-memory. Note that this does /not/ modify the printed (formatted) representation,
-only the internal representation.
-
-#+COMMENT: is this possible..
-# One important property of writer macros is that they are
-# recursive. You can write macros which expand into other macros. This
-# is achieved with a new atom type only available in the context of
-# /writer macroexpansion/. Once all branches have been resolved, we are
-# left with our finalized S-expression which can be passed to the
-# Formatter.
-The most direct analogy to these macros in CL are actually /compiler
-macros/, as we are effectively defining optimization passes which
-search for and replace specific patterns of code.
-** Formatter
-The final component of SXP is the formatter. This is the /first/
-transformation made at read-time, and the /last/ at write-time.
-
-Unlike macros, formatters are interfaces which translate streams of
-/tokens/ using functions of the form: ~format-input~ (deserialize,
-raw->tok) and ~format-output~ (serialize, tok->raw).
-- format-input ::
-  given raw data parameterized by the formatter specification, return
-  a sequence of tokens.
-- format-output ::
-  given a sequence of tokens, return raw data parameterized by the
-  formatter specification.
-
-All formatters are mutually exclusive - an S-expression read with a
-specific formatter must be written with the methods of that same
-formatter.
-*** Default
-For now, I would like to use UTF-8 Strings as the canonical (default)
-format. This is a re-definition of the term originally attributed to a
-compact binary specification (see prior art). No new lines - only
-spaces.
-*** Pretty
-A pretty-printed UTF-8 string. newline and indentation parameters, etc.
-*** Binary
-A well-defined binary data representation, usually an array of bytes
-(u8).
-*** COMMENT Compact
-# compressed?
-*** Custom
-User-defined formatter.
-** Test Suite
-This section provides a test suite which can be used for verifying and
-benchmarking an implementation as shown in the reference
-implementation.
-- test data ::
-  - =./tests.sxp=
-*** parser tests
-SXP implementations are required to convert data from arbitrary
-streams into an internal Tree representation.
-*** serialization tests
-*** deserialization tests
-*** formatter tests
-*** macro tests
-* TODO Reference Implementation
-The reference implementation is located in the =rust= folder of this
-project. It leverages the serde ecosystem and includes a full
+#+name: sxp-cl-bench
+#+begin_src shell
+#+end_src
+** Emacs Lisp
+The Emacs Lisp implementation is a single file in the root directory
+which mimicks the behavior of the Common Lisp implementation.
+** TODO Rust
+The Rust reference implementation is located in the =rust= folder of
+this project. It leverages the serde ecosystem and includes a full
 test-suite as specified in the previous section.
 #+name: rust-loc
 #+begin_src sh :results replace output :exports both
@@ -338,15 +181,6 @@ test-suite as specified in the previous section.
 #+end_src
 
 #+RESULTS: rust-loc
-: ===============================================================================
-:  Language            Files        Lines         Code     Comments       Blanks
-: ===============================================================================
-:  Rust                   21         5550         5048          121          381
-:  |- Markdown            14          259           16          222           21
-:  (Total)                           5809         5064          343          402
-: ===============================================================================
-:  Total                  21         5550         5048          121          381
-: ===============================================================================
 
 #+RESULTS:
 : ===============================================================================
@@ -421,7 +255,7 @@ TEST FILES
 ╰────┴──────────┴──────┴──────────┴────────────────╯
 #+end_example
 
-** tests
+*** tests
 #+name: rust-test
 #+begin_src shell :results output replace :shebang #!/usr/bin/env nu :exports both
   cd rust
@@ -430,8 +264,8 @@ TEST FILES
 
 #+RESULTS: run-rust-tests
 
-** examples
-*** udp
+*** examples
+**** udp
 This example shows a basic network example which used SXP as the data
 exchange format. You should run an instance of it in two separate
 terminals to see the effects of serialization.
@@ -447,3 +281,180 @@ terminals to see the effects of serialization.
 (:id 3 :key "od�s���{�\t�\u0016�\"\u0007�{<K���O���\u000bs��#\u0004" :payload (0.5988960943914401 0.18507424718905252 0.5066858621969329 0.27237868503536233 0.7889265093317402 0.8003426474329407 0.8029753091140293 0.23018429888116942 0.6220222102084081 0.6035229536781057 0.21460422291936299 0.20473839314063358 0.6230553158310311 0.8176107505641151 0.33376990736027745 0.5472771996439204 0.013756761117554639 0.362542310894191 0.23198218329151443 0.9807665214331935 0.8475009571273702 0.3179886946114975 0.8472699063062974 0.541594646958305 0.47297569792693883 0.2127092570608261 0.7382601315774998 0.6504966714809076 0.6206151994181767 0.8116706208036837 0.9223858519359078 0.40749529457577893))
 (:id 4 :key "�k���,ܬ\u0005�ĺ\u0012�Y��\u0006}r!!��\u0018�`�/d�0" :payload (0.9926646483886535 0.04957913627550603 0.42501054802544724 0.6781155309850084 0.7488395990975232 0.12480437219134854 0.10368924105933253 0.12432160945673953 0.4292784007510758 0.07930439320824811 0.9928754832618009 0.9398896399172157 0.7857588766640731 0.8879130212960369 0.5182342888846501 0.523730438771649 0.48472768121039833 0.947544728574599 0.21729738216462635 0.29655873380009157 0.8122432664243706 0.2440411601862399 0.9521903618713258 0.6537431169922238 0.816525253650528 0.2612954660003107 0.1865916410218087 0.3842286630646984 0.9084756918516721 0.9518635753352582 0.33045307514389477 0.04210025808991458))
 #+end_example
+* COMMENT notes
+** draft1
+S-eXPressions[fn:2].
+
+[fn:2]  Pronounced 'es-ex-pee' not 'sex-pee' 
+*** Overview
+*SXP* is an attempt at making S-Expressions into a robust /meta data
+ format/. It consists of the modern rules of S-Expression described in
+ the introduction (nil is defined, we can omit dots), a set of
+ well-defined tokens and atoms, a list type, a formatter, and a
+ framework for extending the /reader/ and /writer/ of any given SXP
+ implementation via macros.
+**** Prior Art
+The sections preceeding this one were written without doing any
+research really, but I did find a relevant proposal: see
+[[file:draft-rivest-sexp-00.txt][draft-rivest-sexp-00.txt]]. It's the same idea with a different
+approach - the focus is on an exact binary format which is referred to
+as the Canonical representation. There are additional representations
+available through custom printer modes.
+
+There is also something called [[https://twisted.org/documents/16.1.1/core/specifications/banana.html][Banana]] which is an extensible
+/transport/ protocol for sending and receiving S-expressions. Again
+quite similar - binary format using tagged values.
+
+A C++/C library called [[https://github.com/mjsottile/sfsexp][sfsexp]] is available. It looks quite good
+actually and I'm excited to test it further.
+
+For some additional simple implementations, check out [[https://rosettacode.org/wiki/S-expressions][S-expressions on
+Rosetta Code]].
+*** Atoms
+Atoms are the indivisible units of a SXP -- they are used as the
+internal representation of our data which is manipulated in the
+structures supported by a given implementation.
+**** Numbers
+#+begin_example
+numeric-token  ::=  integer |
+				   ratio   |
+				   float       
+integer        ::=  [sign]
+				   decimal-digit+
+				   decimal-point |
+				   [sign]
+				   digit+      
+ratio          ::=  [sign]
+				   {digit}+
+				   slash
+				   {digit}+    
+float          ::=  [sign]
+				   {decimal-digit}*
+				   decimal-point
+				   {decimal-digit}+
+				   [exponent]  
+                    | 
+				   [sign]
+				   {decimal-digit}+
+				   [decimal-point
+					   {decimal-digit}*]
+				   exponent    
+exponent       ::=  exponent-marker
+				   [sign]
+				   {digit}+    
+                                       
+sign---a sign.                         
+slash---a slash                        
+decimal-point---a dot.                        
+exponent-marker---an exponent marker.                        
+decimal-digit---a digit in radix 10.                        
+digit---a digit in the current input radix.  
+#+end_example
+see also: [[http://clhs.lisp.se/Body/02_caa.htm][potential numbers]]
+**** Strings
+[[http://clhs.lisp.se/Body/02_de.htm][CLHS]] 
+#+begin_example
+  The double-quote is used to begin and end a string. When a
+  double-quote is encountered, characters are read from the input stream
+  and accumulated until another double-quote is encountered. If a single
+  escape character is seen, the single escape character is discarded,
+  the next character is accumulated, and accumulation continues. The
+  accumulated characters up to but not including the matching
+  double-quote are made into a simple string and returned. It is
+  implementation-dependent which attributes of the accumulated
+  characters are removed in this process.
+
+  Examples of the use of the double-quote character are in the next
+  figure.
+
+  "Foo"                      ;A string with three characters in it  
+  ""                         ;An empty string                       
+  "\"APL\\360?\" he cried."  ;A string with twenty characters       
+  "|x| = |-x|"               ;A ten-character string   
+#+end_example
+**** Symbols
+[[http://clhs.lisp.se/Body/02_cd.htm][CLHS]]
+#+begin_example
+  Any token that is not a potential number, does not contain a package
+  marker, and does not consist entirely of dots will always be
+  interpreted as a symbol. Any token that is a potential number but does
+  not fit the number syntax is a reserved token and has an
+  implementation-dependent interpretation. In all other cases, the token
+  is construed to be the name of a symbol.
+#+end_example
+*** Lists
+*** Macros
+Macros are the mechanism by which a SXP reader and writer are
+extended. They are driven by individual function lookup tables -
+referred to as the ~readtable~ and ~writetable~ respectively. These
+tables are indexed separately but store the same core 'Macro' type.
+
+Macros receive and return a single S-Expression object, but are used
+by the parser in different ways.
+
+**** Reader Macros
+Reader Macros occur during /deserialization/. When the unquoted =#=
+character is encountered, the next character is matched against a
+hashtable of /read symbols/ and the corresponding function is called
+on the remainder of the input or until control is returned to the
+Deserializer.  See [[http://clhs.lisp.se/Body/v_rdtabl.htm#STreadtableST][*readtable*]]
+**** Writer Macros
+Writer Macros occur during /serialization/ before being passed to the
+output formatter/writer. They allow for transformations of SXPs in
+memory. Note that this does /not/ modify the printed (formatted) representation,
+only the internal representation.
+
+#+COMMENT: is this possible..
+# One important property of writer macros is that they are
+# recursive. You can write macros which expand into other macros. This
+# is achieved with a new atom type only available in the context of
+# /writer macroexpansion/. Once all branches have been resolved, we are
+# left with our finalized S-expression which can be passed to the
+# Formatter.
+The most direct analogy to these macros in CL are actually /compiler
+macros/, as we are effectively defining optimization passes which
+search for and replace specific patterns of code.
+*** Formatter
+The final component of SXP is the formatter. This is the /first/
+transformation made at read-time, and the /last/ at write-time.
+
+Unlike macros, formatters are interfaces which translate streams of
+/tokens/ using functions of the form: ~format-input~ (deserialize,
+raw->tok) and ~format-output~ (serialize, tok->raw).
+- format-input ::
+  given raw data parameterized by the formatter specification, return
+  a sequence of tokens.
+- format-output ::
+  given a sequence of tokens, return raw data parameterized by the
+  formatter specification.
+
+All formatters are mutually exclusive - an S-expression read with a
+specific formatter must be written with the methods of that same
+formatter.
+**** Default
+For now, I would like to use UTF-8 Strings as the canonical (default)
+format. This is a re-definition of the term originally attributed to a
+compact binary specification (see prior art). No new lines - only
+spaces.
+**** Pretty
+A pretty-printed UTF-8 string. newline and indentation parameters, etc.
+**** Binary
+A well-defined binary data representation, usually an array of bytes
+(u8).
+**** COMMENT Compact
+# compressed?
+**** Custom
+User-defined formatter.
+*** Test Suite
+This section provides a test suite which can be used for verifying and
+benchmarking an implementation as shown in the reference
+implementation.
+- test data ::
+  - =./tests.sxp=
+**** parser tests
+SXP implementations are required to convert data from arbitrary
+streams into an internal Tree representation.
+**** serialization tests
+**** deserialization tests
+**** formatter tests
+**** macro tests
