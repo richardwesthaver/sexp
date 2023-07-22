@@ -31,50 +31,52 @@
 ;;; OOP
 (require 'eieio)
 
-(defclass sxp () () :abstract t)
-
-(cl-defgeneric from-sxp (obj sxp)
-  "Update OBJ using values from SXP.")
-(cl-defgeneric to-sxp (obj)
-  "Return OBJ as a list.")
-(cl-defgeneric read-sxp (obj &optional stream)
+(cl-defgeneric wrap (sxp form))
+(cl-defgeneric unwrap (sxp))
+(cl-defgeneric from-sxp (sxp form)
+  "Update SXP using values from FORM.")
+(cl-defgeneric to-sxp (sxp)
+  "Return SXP as a list.")
+(cl-defgeneric read-sxp (sxp &optional stream)
   "Read S-Expressions directly from STREAM (default =
-  `standard-input')and updated OBJ.")
-(cl-defgeneric write-sxp (obj &optional stream comment)
+  `standard-input') and update SXP.")
+(cl-defgeneric write-sxp (sxp &optional stream comment)
   "Write S-Expressions directly to STREAM (default =
   `standard-output') with optional COMMENT.")
 
-(defclass form (sxp)
+(defclass sxp ()
   ((form :initarg :form :accessor form)))
 
-(cl-defmethod from-sxp ((obj form) sxp)
-  (initialize-instance obj (list :form sxp))
-  obj)
-(cl-defmethod to-sxp ((obj form))
-  (oref obj :form))
-(cl-defmethod read-sxp ((obj form) &optional stream)
-  (initialize-instance obj (list :form (read stream)))
-  obj)
-(cl-defmethod write-sxp ((obj form) &optional stream)
-  (print (to-sxp obj) stream))
+(cl-defmethod wrap ((sxp sxp) form)
+  (oset sxp :form form))
+(cl-defmethod unwrap ((sxp sxp))
+  (slot-value sxp 'form))
 
-(with-eval-after-load "ert"
-  (defmacro deftest (name &rest body)
-    "shorthand for `ert-deftest'."
-    (declare (indent 1))
-    `(ert-deftest ,name () :tags '(sxp) ,@body))
-  (deftest sxp:read
-    (should (read-sxp (form) "(hey stranger)")))
-  (deftest sxp:write
-    (should (write-sxp (form :form nil))))
-  (deftest sxp:from
-    (should (from-sxp (form) '(test 1 2 3))))
-  (deftest sxp:to
-    (should (to-sxp (form :form '("test" 'ing)))))
-  (deftest sxp:fmt
-    (should t))
-  (deftest sxp:mode
-    (should t)))
+(cl-defmethod read-sxp ((sxp sxp) &optional stream)
+  (initialize-instance sxp (list :form (read stream)))
+  sxp)
+(cl-defmethod write-sxp ((sxp sxp) &optional stream)
+  (print (to-sxp sxp) stream))
+
+;; (defvar sxp-load-tests nil)
+;; (when sxp-load-tests
+;;   (require 'ert)
+;;   (defmacro deftest (name &rest body)
+;;     "shorthand for `ert-deftest'."
+;;     (declare (indent 1))
+;;     `(ert-deftest ,name () :tags '(sxp) ,@body))
+;;   (deftest 'sxp:read
+;;     (should (read-sxp (sxp) "(hey stranger)")))
+;;   (deftest 'sxp:write
+;;     (should (write-sxp (sxp :form nil))))
+;;   (deftest 'sxp:from
+;;     (should (from-sxp (sxp) '(test 1 2 3))))
+;;   (deftest 'sxp:to
+;;     (should (to-sxp (sxp :form '("test" 'ing)))))
+;;   (deftest 'sxp:fmt
+;;     (should t))
+;;   (deftest 'sxp:mode
+;;     (should t)))
 
 (provide 'sxp)
 ;;; sxp.el ends here

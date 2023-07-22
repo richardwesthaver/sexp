@@ -1,4 +1,4 @@
 .*Cargo.lock$
 .*(target|dist)/.*
-.*[.]html$
+.*[.](html|fasl|lock|env|elc|eln)$
 report.sxp

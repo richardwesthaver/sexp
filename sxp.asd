@@ -22,6 +22,6 @@
 		    (uiop:symbol-call '#:sxp-tests '#:run-tests)))
 
 (defsystem "sxp/bench"
-  :depends-on ("sxp" "uiop")
+  :depends-on ("sxp" "uiop" "sb-sprof")
   :components ((:file "bench"))
   :perform (test-op (op c) (uiop:symbol-call '#:sxp-bench '#:run-bench)))
