@@ -4,6 +4,11 @@
 	   :*bench-output-directory* :*bench-iterations* :*bench-report-file*))
 (in-package :sxp-bench)
 (require :sb-sprof)
+(declaim
+ (type (or string pathname) *bench-input-file* *bench-output-directory* *bench-report-file*)
+ (type string *bench-input-string*)
+ (type sxp *bench-input-object*)
+ (type integer *bench-iterations*))
 (defparameter *bench-input-file* "tests.sxp")
 (defparameter *bench-input-string* (uiop:read-file-string *bench-input-file*))
 (defparameter *bench-input-object* (sxp:read-sxp-string *bench-input-string*))

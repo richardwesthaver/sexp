@@ -20,7 +20,7 @@ pub fn to_writer<W: Write, S: ?Sized + Serialize>(
 #[inline]
 pub fn to_vec<S: ?Sized + Serialize>(value: &S) -> Result<Vec<u8>> {
   let mut writer = Vec::with_capacity(128);
-  tri!(to_writer(&mut writer, value));
+  e!(to_writer(&mut writer, value));
   Ok(writer)
 }
 
@@ -202,9 +202,9 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
   #[inline]
   fn serialize_bytes(self, value: &[u8]) -> Result<()> {
     use serde::ser::SerializeSeq;
-    let mut seq = tri!(self.serialize_seq(Some(value.len())));
+    let mut seq = e!(self.serialize_seq(Some(value.len())));
     for byte in value {
-      tri!(seq.serialize_element(byte));
+      e!(seq.serialize_element(byte));
     }
     seq.end()
   }
@@ -254,25 +254,25 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
   where
     T: ?Sized + Serialize,
   {
-    tri!(self
+    e!(self
       .formatter
       .begin_list(&mut self.writer)
       .map_err(Error::io));
-    tri!(self.serialize_symbol(variant));
-    // tri!(self
+    e!(self.serialize_symbol(variant));
+    // e!(self
     //     .formatter
     //     .end_object_key(&mut self.writer)
     //     .map_err(|e| e.into()));
-    // tri!(self
+    // e!(self
     //     .formatter
     //     .begin_object_value(&mut self.writer)
     //     .map_err(|e| e.into()));
-    tri!(self
+    e!(self
       .formatter
       .begin_list_element(&mut self.writer, false)
       .map_err(Error::io));
-    tri!(value.serialize(&mut *self));
-    // tri!(self
+    e!(value.serialize(&mut *self));
+    // e!(self
     //     .formatter
     //     .end_object_value(&mut self.writer)
     //     .map_err(|e| e.into()));
@@ -295,12 +295,12 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
   #[inline]
   fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
     // TODO: impl nil for seq of 0 length?
-    tri!(self
+    e!(self
       .formatter
       .begin_list(&mut self.writer)
       .map_err(Error::io));
     if len == Some(0) {
-      tri!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
+      e!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
       Ok(Seq {
         ser: self,
         state: State::Nil,
@@ -335,20 +335,20 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
     variant: &'static str,
     len: usize,
   ) -> Result<Self::SerializeTupleVariant> {
-    tri!(self
+    e!(self
       .formatter
       .begin_list(&mut self.writer)
       .map_err(Error::io));
-    tri!(self.serialize_symbol(variant));
-    // tri!(self
+    e!(self.serialize_symbol(variant));
+    // e!(self
     //     .formatter
     //     .end_object_key(&mut self.writer)
     //     .map_err(|e| e.into()));
-    // tri!(self
+    // e!(self
     //     .formatter
     //     .begin_object_value(&mut self.writer)
     //     .map_err(|e| e.into()));
-    tri!(self
+    e!(self
       .formatter
       .begin_list_element(&mut self.writer, false)
       .map_err(Error::io));
@@ -357,12 +357,12 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
 
   #[inline]
   fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap> {
-    tri!(self
+    e!(self
       .formatter
       .begin_list(&mut self.writer)
       .map_err(Error::io));
     if len == Some(0) {
-      tri!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
+      e!(self.formatter.end_list(&mut self.writer).map_err(Error::io));
       Ok(Seq {
         ser: self,
         state: State::Nil,
@@ -393,20 +393,20 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
     variant: &'static str,
     len: usize,
   ) -> Result<Self::SerializeStructVariant> {
-    tri!(self
+    e!(self
       .formatter
       .begin_list(&mut self.writer)
       .map_err(Error::io));
-    tri!(self.serialize_symbol(variant));
-    tri!(self
+    e!(self.serialize_symbol(variant));
+    e!(self
       .formatter
       .begin_list_element(&mut self.writer, false)
       .map_err(Error::io));
-    // tri!(self
+    // e!(self
     //     .formatter
     //     .end_object_key(&mut self.writer)
     //     .map_err(|e| e.into()));
-    // tri!(self
+    // e!(self
     //     .formatter
     //     .begin_object_value(&mut self.writer)
     //     .map_err(|e| e.into()));
@@ -442,7 +442,7 @@ impl<'ser, W: Write, F: WriteFormatter> serde::ser::Serializer
       }
     }
 
-    tri!(self
+    e!(self
       .formatter
       .begin_string(&mut self.writer)
       .map_err(Error::io));
@@ -491,12 +491,12 @@ impl<'ser, W: Write, F: WriteFormatter> ser::SerializeSeq for Seq<'ser, W, F> {
     value: &T,
   ) -> Result<()> {
     let ser = &mut self.ser;
-    tri!(ser
+    e!(ser
       .formatter
       .begin_list_element(&mut ser.writer, self.state == State::Car)
       .map_err(Error::io));
     self.state = State::Cdr;
-    tri!(value.serialize(&mut **ser));
+    e!(value.serialize(&mut **ser));
     ser
       .formatter
       .end_list_element(&mut ser.writer)
@@ -586,7 +586,7 @@ where
   //  TODO 2023-07-09: this don't feel right
   #[inline]
   fn end(self) -> Result<()> {
-    tri!(self
+    e!(self
       .ser
       .formatter
       .end_list(&mut self.ser.writer)
@@ -609,12 +609,12 @@ where
     T: ?Sized + Serialize,
   {
     let ser = &mut self.ser;
-    tri!(ser
+    e!(ser
       .formatter
       .begin_list_element(&mut ser.writer, self.state == State::Car)
       .map_err(Error::io));
     self.state = State::Cdr;
-    tri!(ser.formatter.begin_key(&mut ser.writer).map_err(Error::io));
+    e!(ser.formatter.begin_key(&mut ser.writer).map_err(Error::io));
     key.serialize(SymbolSerializer(*ser))
   }
 
@@ -624,11 +624,11 @@ where
     T: ?Sized + Serialize,
   {
     let ser = &mut self.ser;
-    tri!(ser
+    e!(ser
       .formatter
       .begin_list_element(&mut ser.writer, false)
       .map_err(Error::io));
-    tri!(value.serialize(&mut **ser));
+    e!(value.serialize(&mut **ser));
     ser
       .formatter
       .end_list_element(&mut ser.writer)
@@ -680,13 +680,13 @@ where
   where
     T: ?Sized + Serialize,
   {
-    tri!(self
+    e!(self
       .ser
       .formatter
       .begin_key(&mut self.ser.writer)
       .map_err(Error::io));
-    tri!(self.ser.serialize_symbol(key));
-    tri!(self
+    e!(self.ser.serialize_symbol(key));
+    e!(self
       .ser
       .formatter
       .begin_list_element(&mut self.ser.writer, false)
@@ -698,7 +698,7 @@ where
   fn end(self) -> Result<()> {
     match self.state {
       State::Nil => (),
-      _ => tri!(self
+      _ => e!(self
         .ser
         .formatter
         .end_list(&mut self.ser.writer)
@@ -766,12 +766,12 @@ where
   }
 
   fn serialize_i8(self, value: i8) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_i8(&mut self.0.writer, value)
@@ -784,12 +784,12 @@ where
   }
 
   fn serialize_i16(self, value: i16) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_i16(&mut self.0.writer, value)
@@ -802,12 +802,12 @@ where
   }
 
   fn serialize_i32(self, value: i32) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_i32(&mut self.0.writer, value)
@@ -820,12 +820,12 @@ where
   }
 
   fn serialize_i64(self, value: i64) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_i64(&mut self.0.writer, value)
@@ -838,12 +838,12 @@ where
   }
 
   fn serialize_i128(self, value: i128) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_i128(&mut self.0.writer, value)
@@ -856,12 +856,12 @@ where
   }
 
   fn serialize_u8(self, value: u8) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_u8(&mut self.0.writer, value)
@@ -874,12 +874,12 @@ where
   }
 
   fn serialize_u16(self, value: u16) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_u16(&mut self.0.writer, value)
@@ -892,12 +892,12 @@ where
   }
 
   fn serialize_u32(self, value: u32) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_u32(&mut self.0.writer, value)
@@ -910,12 +910,12 @@ where
   }
 
   fn serialize_u64(self, value: u64) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_u64(&mut self.0.writer, value)
@@ -928,12 +928,12 @@ where
   }
 
   fn serialize_u128(self, value: u128) -> Result<()> {
-    tri!(self
+    e!(self
       .0
       .formatter
       .begin_string(&mut self.0.writer)
       .map_err(Error::io));
-    tri!(self
+    e!(self
       .0
       .formatter
       .write_u128(&mut self.0.writer, value)

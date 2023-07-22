@@ -6,26 +6,10 @@
 + todo ::
   - [-] Rust
     - [-] {lib,tests}.rs
-      - [X] ser
-      - [ ] de
-      - [ ] tok
-      - [ ] ast
-      - [ ] fmt
-      - [ ] macs
+      - form.rs
   - [-] Python
   - [-] Emacs Lisp
-  - [-] Common Lisp
-+ RFC ::
-  - [?] do we want un/back-quote? =,@= splicing would probably be part of
-    unquote specification.
-    - pros
-      - embed objects in any lexical env
-      - extends capabilities of read/write macros
-    - cons
-      - additional tokens/ast types
-      - additional formatter/encoder methods
-  - [+] should the reference impl (rust) enum =Sexp= (valid ast types) be
-    renamed? maybe to =Form=? something else?
+  - [X] Common Lisp
 * Overview
 ** Introduction
 [[https://en.wikipedia.org/wiki/S-expression][S-expressions]] are tree-like data structures classically defined as:
@@ -162,117 +146,605 @@ implementation uses =read= and =print= functions. A =esrap-impl= is
 also provided using the =esrap= parsing library.
 
 #+name: sxp-cl-tests
-#+begin_src shell
+#+begin_src shell :results output replace :exports both
+make test
 #+end_src
 
+#+RESULTS: sxp-cl-tests
+#+begin_example
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(asdf:compile-system :sxp)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(ql:quickload :sxp/tests)' --eval '(asdf:test-system :sxp)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+To load "sxp/tests":
+  Load 1 ASDF system:
+    sxp/tests
+; Loading "sxp/tests"
+
+
+Running test suite SXP
+ Running test SXP-FILE .
+ Did 1 check.
+    Pass: 1 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+
+#+end_example
+
 #+name: sxp-cl-bench
-#+begin_src shell
+#+begin_src shell :results output replace :exports both
+make bench
 #+end_src
+
+#+RESULTS: sxp-cl-bench
+#+begin_example
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(asdf:compile-system :sxp)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(ql:quickload :sxp/bench)' --eval '(require :sb-sprof)' --eval '(sb-sprof:start-profiling :sample-interval 0.001)' --eval '(sxp-bench:run-bench t)' --eval '(sb-sprof:stop-profiling)' --eval '(sb-sprof:report)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+To load "sxp/bench":
+  Load 1 ASDF system:
+    sxp/bench
+; Loading "sxp/bench"
+
+Writing output to "report.sxp"
+
+Number of samples:   24
+Sample interval:     0.001 seconds
+Total sampling time: 0.024 seconds
+Graph cycles:        0
+Sampled threads:
+   #<THREAD tid=306736 "main thread" RUNNING {10047D0113}> (6896/1048576 bytes, 33 hash buckets)
+
+                               Callers
+                 Total.     Function
+ Count     %  Count     %      Callees
+------------------------------------------------------------------------
+     2   8.3                   SB-UNIX:UNIX-LSTAT [93]
+     2   8.3                   SB-UNIX:FD-TYPE [66]
+     4  16.7      4  16.7   foreign function fstatat [1]
+------------------------------------------------------------------------
+     4  16.7                   (FLET "WITHOUT-INTERRUPTS-BODY-5" :IN SB-IMPL::RELEASE-FD-STREAM-RESOURCES) [79]
+     4  16.7      4  16.7   foreign function __close [2]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::PRETTY-SOUT [61]
+     1   4.2                   SB-PRETTY::PRETTY-OUT [59]
+     3  12.5      3  12.5   SB-PRETTY::ENSURE-SPACE-IN-BUFFER [3]
+------------------------------------------------------------------------
+     3  12.5                   SB-IMPL::FLUSH-OUTPUT-BUFFER [73]
+     3  12.5      3  12.5   foreign function __write [4]
+------------------------------------------------------------------------
+     3  12.5      3  12.5   foreign function __open64 [5]
+------------------------------------------------------------------------
+     3  12.5                   READ-CHAR [20]
+     2   8.3      3  12.5   SB-IMPL::INPUT-CHAR/UTF-8 [8]
+     1   4.2                   SB-IMPL::REFILL-INPUT-BUFFER [87]
+------------------------------------------------------------------------
+     2   8.3                   SB-SYS:GET-SYSTEM-INFO [55]
+     2   8.3      2   8.3   foreign function getrusage [6]
+------------------------------------------------------------------------
+     2   8.3                   SB-IMPL::PRINT-FLOAT [14]
+     2   8.3      2   8.3   TRUNCATE [7]
+------------------------------------------------------------------------
+     2   8.3                   OPEN [56]
+     2   8.3      2   8.3   foreign function access [9]
+------------------------------------------------------------------------
+     7  29.2                   SB-IMPL::READ-MAYBE-NOTHING [85]
+     1   4.2      7  29.2   SB-IMPL::READ-LIST [21]
+     1   4.2                   SB-IMPL::FLUSH-WHITESPACE [24]
+     5  20.8                   SB-IMPL::READ-MAYBE-NOTHING [85]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     1   4.2      4  16.7   SB-IMPL::PRINT-FLOAT [14]
+     2   8.3                   TRUNCATE [7]
+     1   4.2                   (LAMBDA (SB-IMPL::D) :IN SB-IMPL::PRINT-FLOAT) [58]
+------------------------------------------------------------------------
+     2   8.3                   SB-IMPL::READ-TOKEN [22]
+     1   4.2                   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+     1   4.2      4  16.7   READ-CHAR [20]
+     3  12.5                   SB-IMPL::INPUT-CHAR/UTF-8 [8]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::READ-MAYBE-NOTHING [85]
+     1   4.2      4  16.7   SB-IMPL::READ-TOKEN [22]
+     2   8.3                   READ-CHAR [20]
+     1   4.2                   DIGIT-CHAR-P [23]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::OUTPUT-LINE [67]
+     1   4.2                   SB-KERNEL:OUTPUT-SYMBOL [64]
+     1   4.2                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     1   4.2      3  12.5   SB-IMPL::%WRITE-STRING [12]
+     1   4.2                   SB-IMPL::FD-SOUT [16]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::FITS-ON-LINE-P [50]
+     1   4.2      1   4.2   SB-PRETTY::INDEX-COLUMN [10]
+------------------------------------------------------------------------
+     1   4.2                   foreign function interrupt_handle_pending [52]
+     1   4.2      1   4.2   foreign function pthread_sigmask [11]
+------------------------------------------------------------------------
+     1   4.2                   SB-SYS:MAKE-FD-STREAM [57]
+     1   4.2      1   4.2   SB-IMPL::SET-FD-STREAM-ROUTINES [13]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::%FIND-SYMBOL [65]
+     1   4.2      1   4.2   SB-IMPL::%LOOKUP-SYMBOL [15]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::%WRITE-STRING [12]
+     1   4.2      1   4.2   SB-IMPL::FD-SOUT [16]
+------------------------------------------------------------------------
+     1   4.2                   SB-UNIX:UNIX-OPEN [68]
+     1   4.2      1   4.2   SB-IMPL::OUTPUT-TO-C-STRING/UTF-8 [17]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::UNPARSE-NATIVE-PHYSICAL-FILE [75]
+     1   4.2      1   4.2   PATHNAME-TYPE [18]
+------------------------------------------------------------------------
+     1   4.2                   (SB-PCL::FAST-METHOD PRINT-OBJECT (FLOAT T)) [77]
+     1   4.2      1   4.2   FLOAT-SIGN [19]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::READ-TOKEN [22]
+     1   4.2      1   4.2   DIGIT-CHAR-P [23]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::READ-LIST [21]
+     1   4.2      1   4.2   SB-IMPL::FLUSH-WHITESPACE [24]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::READ-MAYBE-NOTHING [85]
+     1   4.2      1   4.2   SB-IMPL::RESET-READ-BUFFER [25]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::REFILL-INPUT-BUFFER [87]
+     1   4.2      1   4.2   foreign function read [26]
+------------------------------------------------------------------------
+    39 162.5                   SB-INT:SIMPLE-EVAL-IN-LEXENV [34]
+     0   0.0     39 162.5   SXP-BENCH:RUN-BENCH [35]
+     2   8.3                   (LABELS SB-IMPL::RECURSE :IN DELETE-DIRECTORY) [88]
+    14  58.3                   SXP-BENCH::RBENCH [80]
+    23  95.8                   SXP-BENCH::WBENCH [36]
+------------------------------------------------------------------------
+    39 162.5                   EVAL [33]
+     0   0.0     39 162.5   SB-INT:SIMPLE-EVAL-IN-LEXENV [34]
+    39 162.5                   SXP-BENCH:RUN-BENCH [35]
+------------------------------------------------------------------------
+    39 162.5                   SB-IMPL::PROCESS-EVAL/LOAD-OPTIONS [32]
+     0   0.0     39 162.5   EVAL [33]
+    39 162.5                   SB-INT:SIMPLE-EVAL-IN-LEXENV [34]
+------------------------------------------------------------------------
+    39 162.5                   SB-IMPL::TOPLEVEL-INIT [31]
+     0   0.0     39 162.5   SB-IMPL::PROCESS-EVAL/LOAD-OPTIONS [32]
+    39 162.5                   EVAL [33]
+------------------------------------------------------------------------
+    39 162.5                   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [30]
+     0   0.0     39 162.5   SB-IMPL::TOPLEVEL-INIT [31]
+    39 162.5                   SB-IMPL::PROCESS-EVAL/LOAD-OPTIONS [32]
+------------------------------------------------------------------------
+    39 162.5                   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [29]
+     0   0.0     39 162.5   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [30]
+    39 162.5                   SB-IMPL::TOPLEVEL-INIT [31]
+------------------------------------------------------------------------
+    39 162.5                   SB-IMPL::%START-LISP [28]
+     0   0.0     39 162.5   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [29]
+    39 162.5                   (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP) [30]
+------------------------------------------------------------------------
+    39 162.5                   foreign function call_into_lisp_ [27]
+     0   0.0     39 162.5   SB-IMPL::%START-LISP [28]
+    39 162.5                   (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP) [29]
+------------------------------------------------------------------------
+     0   0.0     39 162.5   foreign function call_into_lisp_ [27]
+    39 162.5                   SB-IMPL::%START-LISP [28]
+------------------------------------------------------------------------
+    14  58.3                   SXP-BENCH::RBENCH [80]
+    23  95.8                   SXP-BENCH::WBENCH [36]
+     0   0.0     37 154.2   CALL-WITH-TIMING [37]
+    14  58.3                   SXP:READ-SXP-FILE [81]
+     1   4.2                   SB-IMPL::TIME-GET-SYS-INFO [54]
+     1   4.2                   (FLET "CLEANUP-FUN-14" :IN CALL-WITH-TIMING) [53]
+    21  87.5                   UIOP/STREAM:CALL-WITH-OUTPUT-FILE [38]
+------------------------------------------------------------------------
+    23  95.8                   SXP-BENCH:RUN-BENCH [35]
+     0   0.0     23  95.8   SXP-BENCH::WBENCH [36]
+    23  95.8                   CALL-WITH-TIMING [37]
+------------------------------------------------------------------------
+    21  87.5                   CALL-WITH-TIMING [37]
+     0   0.0     21  87.5   UIOP/STREAM:CALL-WITH-OUTPUT-FILE [38]
+     5  20.8                   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-OUTPUT-FILE) [69]
+     4  16.7                   OPEN [56]
+    12  50.0                   PRINT [39]
+------------------------------------------------------------------------
+    14  58.3                   SXP:READ-SXP-FILE [81]
+     0   0.0     14  58.3   UIOP/STREAM:CALL-WITH-INPUT-FILE [82]
+     2   8.3                   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-INPUT-FILE) [86]
+     3  12.5                   OPEN [56]
+     9  37.5                   UIOP/STREAM:SLURP-STREAM-FORMS [83]
+------------------------------------------------------------------------
+    14  58.3                   CALL-WITH-TIMING [37]
+     0   0.0     14  58.3   SXP:READ-SXP-FILE [81]
+    14  58.3                   UIOP/STREAM:CALL-WITH-INPUT-FILE [82]
+------------------------------------------------------------------------
+    14  58.3                   SXP-BENCH:RUN-BENCH [35]
+     0   0.0     14  58.3   SXP-BENCH::RBENCH [80]
+    14  58.3                   CALL-WITH-TIMING [37]
+------------------------------------------------------------------------
+    12  50.0                   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+     0   0.0     12  50.0   (FLET "PPRINT-BLOCK" :IN PPRINT-FILL) [47]
+    11  45.8                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     1   4.2                   PPRINT-NEWLINE [48]
+------------------------------------------------------------------------
+    12  50.0                   (FLET "WITH-PRETTY-STREAM0" :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [45]
+     0   0.0     12  50.0   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+     1   4.2                   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-FUN-CALL) [76]
+     1   4.2                   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-IF) [63]
+     1   4.2                   SB-PRETTY::START-LOGICAL-BLOCK [60]
+    12  50.0                   (FLET "PPRINT-BLOCK" :IN PPRINT-FILL) [47]
+------------------------------------------------------------------------
+    12  50.0                   SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER [44]
+     0   0.0     12  50.0   (FLET "WITH-PRETTY-STREAM0" :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [45]
+    12  50.0                   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+------------------------------------------------------------------------
+     2   8.3                   SB-PRETTY::PPRINT-IF [62]
+     2   8.3                   SB-PRETTY::PPRINT-FUN-CALL [51]
+    12  50.0                   PPRINT-FILL [43]
+     0   0.0     12  50.0   SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER [44]
+    12  50.0                   (FLET "WITH-PRETTY-STREAM0" :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [45]
+------------------------------------------------------------------------
+    12  50.0                   SB-PRETTY:OUTPUT-PRETTY-OBJECT [42]
+     0   0.0     12  50.0   PPRINT-FILL [43]
+    12  50.0                   SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER [44]
+------------------------------------------------------------------------
+    12  50.0                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     0   0.0     12  50.0   SB-PRETTY:OUTPUT-PRETTY-OBJECT [42]
+     1   4.2                   SB-PRETTY::PPRINT-IF [62]
+     1   4.2                   SB-PRETTY::PPRINT-FUN-CALL [51]
+    12  50.0                   PPRINT-FILL [43]
+------------------------------------------------------------------------
+     1   4.2                   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-FUN-CALL) [76]
+     2   8.3                   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-IF) [63]
+    11  45.8                   (FLET "PPRINT-BLOCK" :IN PPRINT-FILL) [47]
+    12  50.0                   PRIN1 [40]
+     0   0.0     12  50.0   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     1   4.2                   (SB-PCL::FAST-METHOD PRINT-OBJECT (FLOAT T)) [77]
+     1   4.2                   SB-KERNEL:OUTPUT-SYMBOL [64]
+     1   4.2                   SB-IMPL::PRINT-FLOAT [14]
+     1   4.2                   SB-IMPL::%WRITE-STRING [12]
+    12  50.0                   SB-PRETTY:OUTPUT-PRETTY-OBJECT [42]
+------------------------------------------------------------------------
+    12  50.0                   PRINT [39]
+     0   0.0     12  50.0   PRIN1 [40]
+    12  50.0                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+------------------------------------------------------------------------
+    12  50.0                   UIOP/STREAM:CALL-WITH-OUTPUT-FILE [38]
+     0   0.0     12  50.0   PRINT [39]
+    12  50.0                   PRIN1 [40]
+------------------------------------------------------------------------
+     9  37.5                   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+     9  37.5                   UIOP/STREAM:SLURP-STREAM-FORMS [83]
+     0   0.0      9  37.5   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+     1   4.2                   SB-IMPL::READ-MAYBE-NOTHING [85]
+     1   4.2                   READ-CHAR [20]
+     9  37.5                   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+------------------------------------------------------------------------
+     9  37.5                   UIOP/STREAM:CALL-WITH-INPUT-FILE [82]
+     0   0.0      9  37.5   UIOP/STREAM:SLURP-STREAM-FORMS [83]
+     9  37.5                   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+------------------------------------------------------------------------
+     3  12.5                   UIOP/STREAM:CALL-WITH-INPUT-FILE [82]
+     4  16.7                   UIOP/STREAM:CALL-WITH-OUTPUT-FILE [38]
+     0   0.0      7  29.2   OPEN [56]
+     2   8.3                   foreign function access [9]
+     1   4.2                   SB-IMPL::UNPARSE-NATIVE-UNIX-NAMESTRING [74]
+     1   4.2                   SB-UNIX:UNIX-OPEN [68]
+     3  12.5                   SB-SYS:MAKE-FD-STREAM [57]
+------------------------------------------------------------------------
+     2   8.3                   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-INPUT-FILE) [86]
+     5  20.8                   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-OUTPUT-FILE) [69]
+     0   0.0      7  29.2   (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) [70]
+     4  16.7                   SB-IMPL::RELEASE-FD-STREAM-RESOURCES [78]
+     3  12.5                   SB-IMPL::FD-STREAM-MISC-ROUTINE [71]
+------------------------------------------------------------------------
+     5  20.8                   SB-IMPL::READ-LIST [21]
+     1   4.2                   SB-IMPL::%READ-PRESERVING-WHITESPACE [84]
+     0   0.0      7  29.2   SB-IMPL::READ-MAYBE-NOTHING [85]
+     1   4.2                   SB-IMPL::RESET-READ-BUFFER [25]
+     1   4.2                   SB-IMPL::READ-TOKEN [22]
+     7  29.2                   SB-IMPL::READ-LIST [21]
+------------------------------------------------------------------------
+     5  20.8                   UIOP/STREAM:CALL-WITH-OUTPUT-FILE [38]
+     0   0.0      5  20.8   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-OUTPUT-FILE) [69]
+     5  20.8                   (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) [70]
+------------------------------------------------------------------------
+     4  16.7                   SB-IMPL::RELEASE-FD-STREAM-RESOURCES [78]
+     0   0.0      4  16.7   (FLET "WITHOUT-INTERRUPTS-BODY-5" :IN SB-IMPL::RELEASE-FD-STREAM-RESOURCES) [79]
+     4  16.7                   foreign function __close [2]
+------------------------------------------------------------------------
+     4  16.7                   (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) [70]
+     0   0.0      4  16.7   SB-IMPL::RELEASE-FD-STREAM-RESOURCES [78]
+     4  16.7                   (FLET "WITHOUT-INTERRUPTS-BODY-5" :IN SB-IMPL::RELEASE-FD-STREAM-RESOURCES) [79]
+------------------------------------------------------------------------
+     3  12.5                   OPEN [56]
+     0   0.0      3  12.5   SB-SYS:MAKE-FD-STREAM [57]
+     2   8.3                   SB-UNIX:FD-TYPE [66]
+     1   4.2                   SB-IMPL::SET-FD-STREAM-ROUTINES [13]
+------------------------------------------------------------------------
+     3  12.5                   SB-IMPL::FINISH-FD-STREAM-OUTPUT [72]
+     0   0.0      3  12.5   SB-IMPL::FLUSH-OUTPUT-BUFFER [73]
+     3  12.5                   foreign function __write [4]
+------------------------------------------------------------------------
+     3  12.5                   SB-IMPL::FD-STREAM-MISC-ROUTINE [71]
+     0   0.0      3  12.5   SB-IMPL::FINISH-FD-STREAM-OUTPUT [72]
+     3  12.5                   SB-IMPL::FLUSH-OUTPUT-BUFFER [73]
+------------------------------------------------------------------------
+     3  12.5                   (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) [70]
+     0   0.0      3  12.5   SB-IMPL::FD-STREAM-MISC-ROUTINE [71]
+     3  12.5                   SB-IMPL::FINISH-FD-STREAM-OUTPUT [72]
+------------------------------------------------------------------------
+     2   8.3                   PPRINT-NEWLINE [48]
+     0   0.0      2   8.3   SB-PRETTY::MAYBE-OUTPUT [49]
+     1   4.2                   SB-PRETTY::OUTPUT-LINE [67]
+     1   4.2                   SB-PRETTY::FITS-ON-LINE-P [50]
+------------------------------------------------------------------------
+     1   4.2                   (FLET "PPRINT-BLOCK" :IN PPRINT-FILL) [47]
+     0   0.0      2   8.3   PPRINT-NEWLINE [48]
+     2   8.3                   SB-PRETTY::MAYBE-OUTPUT [49]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     0   0.0      2   8.3   SB-KERNEL:OUTPUT-SYMBOL [64]
+     1   4.2                   SB-IMPL::%WRITE-STRING [12]
+     1   4.2                   SB-IMPL::%FIND-SYMBOL [65]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+     0   0.0      2   8.3   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-IF) [63]
+     2   8.3                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY:OUTPUT-PRETTY-OBJECT [42]
+     0   0.0      2   8.3   SB-PRETTY::PPRINT-IF [62]
+     2   8.3                   SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER [44]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY:OUTPUT-PRETTY-OBJECT [42]
+     0   0.0      2   8.3   SB-PRETTY::PPRINT-FUN-CALL [51]
+     2   8.3                   SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER [44]
+------------------------------------------------------------------------
+     2   8.3                   SB-IMPL::TIME-GET-SYS-INFO [54]
+     0   0.0      2   8.3   SB-SYS:GET-SYSTEM-INFO [55]
+     2   8.3                   foreign function getrusage [6]
+------------------------------------------------------------------------
+     1   4.2                   CALL-WITH-TIMING [37]
+     1   4.2                   (FLET "CLEANUP-FUN-14" :IN CALL-WITH-TIMING) [53]
+     0   0.0      2   8.3   SB-IMPL::TIME-GET-SYS-INFO [54]
+     2   8.3                   SB-SYS:GET-SYSTEM-INFO [55]
+------------------------------------------------------------------------
+     2   8.3                   SB-SYS:MAKE-FD-STREAM [57]
+     0   0.0      2   8.3   SB-UNIX:FD-TYPE [66]
+     2   8.3                   foreign function fstatat [1]
+------------------------------------------------------------------------
+     2   8.3                   UIOP/STREAM:CALL-WITH-INPUT-FILE [82]
+     0   0.0      2   8.3   (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-INPUT-FILE) [86]
+     2   8.3                   (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) [70]
+------------------------------------------------------------------------
+     2   8.3                   SB-IMPL::NATIVE-FILE-KIND [92]
+     0   0.0      2   8.3   SB-UNIX:UNIX-LSTAT [93]
+     2   8.3                   foreign function fstatat [1]
+------------------------------------------------------------------------
+     2   8.3                   (FLET SB-IMPL::ITERATE :IN MAP-DIRECTORY) [91]
+     0   0.0      2   8.3   SB-IMPL::NATIVE-FILE-KIND [92]
+     2   8.3                   SB-UNIX:UNIX-LSTAT [93]
+------------------------------------------------------------------------
+     2   8.3                   SB-IMPL::CALL-WITH-NATIVE-DIRECTORY-ITERATOR [90]
+     0   0.0      2   8.3   (FLET SB-IMPL::ITERATE :IN MAP-DIRECTORY) [91]
+     2   8.3                   SB-IMPL::NATIVE-FILE-KIND [92]
+------------------------------------------------------------------------
+     2   8.3                   MAP-DIRECTORY [89]
+     0   0.0      2   8.3   SB-IMPL::CALL-WITH-NATIVE-DIRECTORY-ITERATOR [90]
+     2   8.3                   (FLET SB-IMPL::ITERATE :IN MAP-DIRECTORY) [91]
+------------------------------------------------------------------------
+     2   8.3                   (LABELS SB-IMPL::RECURSE :IN DELETE-DIRECTORY) [88]
+     0   0.0      2   8.3   MAP-DIRECTORY [89]
+     2   8.3                   SB-IMPL::CALL-WITH-NATIVE-DIRECTORY-ITERATOR [90]
+------------------------------------------------------------------------
+     2   8.3                   SXP-BENCH:RUN-BENCH [35]
+     0   0.0      2   8.3   (LABELS SB-IMPL::RECURSE :IN DELETE-DIRECTORY) [88]
+     2   8.3                   MAP-DIRECTORY [89]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::MAYBE-OUTPUT [49]
+     0   0.0      1   4.2   SB-PRETTY::FITS-ON-LINE-P [50]
+     1   4.2                   SB-PRETTY::INDEX-COLUMN [10]
+------------------------------------------------------------------------
+     0   0.0      1   4.2   foreign function interrupt_handle_pending [52]
+     1   4.2                   foreign function pthread_sigmask [11]
+------------------------------------------------------------------------
+     1   4.2                   CALL-WITH-TIMING [37]
+     0   0.0      1   4.2   (FLET "CLEANUP-FUN-14" :IN CALL-WITH-TIMING) [53]
+     1   4.2                   SB-IMPL::TIME-GET-SYS-INFO [54]
+------------------------------------------------------------------------
+     1   4.2                   (LAMBDA (SB-IMPL::D) :IN SB-IMPL::PRINT-FLOAT) [58]
+     0   0.0      1   4.2   SB-PRETTY::PRETTY-OUT [59]
+     1   4.2                   SB-PRETTY::ENSURE-SPACE-IN-BUFFER [3]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::PRINT-FLOAT [14]
+     0   0.0      1   4.2   (LAMBDA (SB-IMPL::D) :IN SB-IMPL::PRINT-FLOAT) [58]
+     1   4.2                   SB-PRETTY::PRETTY-OUT [59]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::START-LOGICAL-BLOCK [60]
+     0   0.0      1   4.2   SB-PRETTY::PRETTY-SOUT [61]
+     1   4.2                   SB-PRETTY::ENSURE-SPACE-IN-BUFFER [3]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+     0   0.0      1   4.2   SB-PRETTY::START-LOGICAL-BLOCK [60]
+     1   4.2                   SB-PRETTY::PRETTY-SOUT [61]
+------------------------------------------------------------------------
+     1   4.2                   SB-KERNEL:OUTPUT-SYMBOL [64]
+     0   0.0      1   4.2   SB-IMPL::%FIND-SYMBOL [65]
+     1   4.2                   SB-IMPL::%LOOKUP-SYMBOL [15]
+------------------------------------------------------------------------
+     1   4.2                   SB-PRETTY::MAYBE-OUTPUT [49]
+     0   0.0      1   4.2   SB-PRETTY::OUTPUT-LINE [67]
+     1   4.2                   SB-IMPL::%WRITE-STRING [12]
+------------------------------------------------------------------------
+     1   4.2                   OPEN [56]
+     0   0.0      1   4.2   SB-UNIX:UNIX-OPEN [68]
+     1   4.2                   SB-IMPL::OUTPUT-TO-C-STRING/UTF-8 [17]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::UNPARSE-NATIVE-UNIX-NAMESTRING [74]
+     0   0.0      1   4.2   SB-IMPL::UNPARSE-NATIVE-PHYSICAL-FILE [75]
+     1   4.2                   PATHNAME-TYPE [18]
+------------------------------------------------------------------------
+     1   4.2                   OPEN [56]
+     0   0.0      1   4.2   SB-IMPL::UNPARSE-NATIVE-UNIX-NAMESTRING [74]
+     1   4.2                   SB-IMPL::UNPARSE-NATIVE-PHYSICAL-FILE [75]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+     0   0.0      1   4.2   (SB-PCL::FAST-METHOD PRINT-OBJECT (FLOAT T)) [77]
+     1   4.2                   FLOAT-SIGN [19]
+------------------------------------------------------------------------
+     1   4.2                   (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER) [46]
+     0   0.0      1   4.2   (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-FUN-CALL) [76]
+     1   4.2                   (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT) [41]
+------------------------------------------------------------------------
+     1   4.2                   SB-IMPL::INPUT-CHAR/UTF-8 [8]
+     0   0.0      1   4.2   SB-IMPL::REFILL-INPUT-BUFFER [87]
+     1   4.2                   foreign function read [26]
+------------------------------------------------------------------------
+
+
+           Self        Total        Cumul
+  Nr  Count     %  Count     %  Count     %    Calls  Function
+------------------------------------------------------------------------
+   1      4  16.7      4  16.7      4  16.7        -  foreign function fstatat
+   2      4  16.7      4  16.7      8  33.3        -  foreign function __close
+   3      3  12.5      3  12.5     11  45.8        -  SB-PRETTY::ENSURE-SPACE-IN-BUFFER
+   4      3  12.5      3  12.5     14  58.3        -  foreign function __write
+   5      3  12.5      3  12.5     17  70.8        -  foreign function __open64
+   6      2   8.3      3  12.5     19  79.2        -  SB-IMPL::INPUT-CHAR/UTF-8
+   7      2   8.3      2   8.3     21  87.5        -  foreign function getrusage
+   8      2   8.3      2   8.3     23  95.8        -  TRUNCATE
+   9      2   8.3      2   8.3     25 104.2        -  foreign function access
+  10      1   4.2      7  29.2     26 108.3        -  SB-IMPL::READ-LIST
+  11      1   4.2      4  16.7     27 112.5        -  SB-IMPL::PRINT-FLOAT
+  12      1   4.2      4  16.7     28 116.7        -  READ-CHAR
+  13      1   4.2      4  16.7     29 120.8        -  SB-IMPL::READ-TOKEN
+  14      1   4.2      3  12.5     30 125.0        -  SB-IMPL::%WRITE-STRING
+  15      1   4.2      1   4.2     31 129.2        -  SB-PRETTY::INDEX-COLUMN
+  16      1   4.2      1   4.2     32 133.3        -  foreign function pthread_sigmask
+  17      1   4.2      1   4.2     33 137.5        -  SB-IMPL::SET-FD-STREAM-ROUTINES
+  18      1   4.2      1   4.2     34 141.7        -  SB-IMPL::%LOOKUP-SYMBOL
+  19      1   4.2      1   4.2     35 145.8        -  SB-IMPL::FD-SOUT
+  20      1   4.2      1   4.2     36 150.0        -  SB-IMPL::OUTPUT-TO-C-STRING/UTF-8
+  21      1   4.2      1   4.2     37 154.2        -  PATHNAME-TYPE
+  22      1   4.2      1   4.2     38 158.3        -  FLOAT-SIGN
+  23      1   4.2      1   4.2     39 162.5        -  DIGIT-CHAR-P
+  24      1   4.2      1   4.2     40 166.7        -  SB-IMPL::FLUSH-WHITESPACE
+  25      1   4.2      1   4.2     41 170.8        -  SB-IMPL::RESET-READ-BUFFER
+  26      1   4.2      1   4.2     42 175.0        -  foreign function read
+  27      0   0.0     39 162.5     42 175.0        -  SXP-BENCH:RUN-BENCH
+  28      0   0.0     39 162.5     42 175.0        -  SB-INT:SIMPLE-EVAL-IN-LEXENV
+  29      0   0.0     39 162.5     42 175.0        -  EVAL
+  30      0   0.0     39 162.5     42 175.0        -  SB-IMPL::PROCESS-EVAL/LOAD-OPTIONS
+  31      0   0.0     39 162.5     42 175.0        -  SB-IMPL::TOPLEVEL-INIT
+  32      0   0.0     39 162.5     42 175.0        -  (FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP)
+  33      0   0.0     39 162.5     42 175.0        -  (FLET "WITHOUT-INTERRUPTS-BODY-3" :IN SB-IMPL::START-LISP)
+  34      0   0.0     39 162.5     42 175.0        -  SB-IMPL::%START-LISP
+  35      0   0.0     39 162.5     42 175.0        -  foreign function call_into_lisp_
+  36      0   0.0     37 154.2     42 175.0        -  CALL-WITH-TIMING
+  37      0   0.0     23  95.8     42 175.0        -  SXP-BENCH::WBENCH
+  38      0   0.0     21  87.5     42 175.0        -  UIOP/STREAM:CALL-WITH-OUTPUT-FILE
+  39      0   0.0     14  58.3     42 175.0        -  UIOP/STREAM:CALL-WITH-INPUT-FILE
+  40      0   0.0     14  58.3     42 175.0        -  SXP:READ-SXP-FILE
+  41      0   0.0     14  58.3     42 175.0        -  SXP-BENCH::RBENCH
+  42      0   0.0     12  50.0     42 175.0        -  (FLET "PPRINT-BLOCK" :IN PPRINT-FILL)
+  43      0   0.0     12  50.0     42 175.0        -  (LABELS #:BODY-NAME-3 :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER)
+  44      0   0.0     12  50.0     42 175.0        -  (FLET "WITH-PRETTY-STREAM0" :IN SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER)
+  45      0   0.0     12  50.0     42 175.0        -  SB-PRETTY::CALL-LOGICAL-BLOCK-PRINTER
+  46      0   0.0     12  50.0     42 175.0        -  PPRINT-FILL
+  47      0   0.0     12  50.0     42 175.0        -  SB-PRETTY:OUTPUT-PRETTY-OBJECT
+  48      0   0.0     12  50.0     42 175.0        -  (LABELS SB-IMPL::HANDLE-IT :IN SB-KERNEL:OUTPUT-OBJECT)
+  49      0   0.0     12  50.0     42 175.0        -  PRIN1
+  50      0   0.0     12  50.0     42 175.0        -  PRINT
+  51      0   0.0      9  37.5     42 175.0        -  SB-IMPL::%READ-PRESERVING-WHITESPACE
+  52      0   0.0      9  37.5     42 175.0        -  UIOP/STREAM:SLURP-STREAM-FORMS
+  53      0   0.0      7  29.2     42 175.0        -  OPEN
+  54      0   0.0      7  29.2     42 175.0        -  (SB-PCL::FAST-METHOD CLOSE (SB-KERNEL:ANSI-STREAM))
+  55      0   0.0      7  29.2     42 175.0        -  SB-IMPL::READ-MAYBE-NOTHING
+  56      0   0.0      5  20.8     42 175.0        -  (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-OUTPUT-FILE)
+  57      0   0.0      4  16.7     42 175.0        -  (FLET "WITHOUT-INTERRUPTS-BODY-5" :IN SB-IMPL::RELEASE-FD-STREAM-RESOURCES)
+  58      0   0.0      4  16.7     42 175.0        -  SB-IMPL::RELEASE-FD-STREAM-RESOURCES
+  59      0   0.0      3  12.5     42 175.0        -  SB-SYS:MAKE-FD-STREAM
+  60      0   0.0      3  12.5     42 175.0        -  SB-IMPL::FLUSH-OUTPUT-BUFFER
+  61      0   0.0      3  12.5     42 175.0        -  SB-IMPL::FINISH-FD-STREAM-OUTPUT
+  62      0   0.0      3  12.5     42 175.0        -  SB-IMPL::FD-STREAM-MISC-ROUTINE
+  63      0   0.0      2   8.3     42 175.0        -  SB-PRETTY::MAYBE-OUTPUT
+  64      0   0.0      2   8.3     42 175.0        -  PPRINT-NEWLINE
+  65      0   0.0      2   8.3     42 175.0        -  SB-KERNEL:OUTPUT-SYMBOL
+  66      0   0.0      2   8.3     42 175.0        -  (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-IF)
+  67      0   0.0      2   8.3     42 175.0        -  SB-PRETTY::PPRINT-IF
+  68      0   0.0      2   8.3     42 175.0        -  SB-PRETTY::PPRINT-FUN-CALL
+  69      0   0.0      2   8.3     42 175.0        -  SB-SYS:GET-SYSTEM-INFO
+  70      0   0.0      2   8.3     42 175.0        -  SB-IMPL::TIME-GET-SYS-INFO
+  71      0   0.0      2   8.3     42 175.0        -  SB-UNIX:FD-TYPE
+  72      0   0.0      2   8.3     42 175.0        -  (FLET "CLEANUP-FUN-3" :IN UIOP/STREAM:CALL-WITH-INPUT-FILE)
+  73      0   0.0      2   8.3     42 175.0        -  SB-UNIX:UNIX-LSTAT
+  74      0   0.0      2   8.3     42 175.0        -  SB-IMPL::NATIVE-FILE-KIND
+  75      0   0.0      2   8.3     42 175.0        -  (FLET SB-IMPL::ITERATE :IN MAP-DIRECTORY)
+  76      0   0.0      2   8.3     42 175.0        -  SB-IMPL::CALL-WITH-NATIVE-DIRECTORY-ITERATOR
+  77      0   0.0      2   8.3     42 175.0        -  MAP-DIRECTORY
+  78      0   0.0      2   8.3     42 175.0        -  (LABELS SB-IMPL::RECURSE :IN DELETE-DIRECTORY)
+  79      0   0.0      1   4.2     42 175.0        -  SB-PRETTY::FITS-ON-LINE-P
+  80      0   0.0      1   4.2     42 175.0        -  foreign function interrupt_handle_pending
+  81      0   0.0      1   4.2     42 175.0        -  (FLET "CLEANUP-FUN-14" :IN CALL-WITH-TIMING)
+  82      0   0.0      1   4.2     42 175.0        -  SB-PRETTY::PRETTY-OUT
+  83      0   0.0      1   4.2     42 175.0        -  (LAMBDA (SB-IMPL::D) :IN SB-IMPL::PRINT-FLOAT)
+  84      0   0.0      1   4.2     42 175.0        -  SB-PRETTY::PRETTY-SOUT
+  85      0   0.0      1   4.2     42 175.0        -  SB-PRETTY::START-LOGICAL-BLOCK
+  86      0   0.0      1   4.2     42 175.0        -  SB-IMPL::%FIND-SYMBOL
+  87      0   0.0      1   4.2     42 175.0        -  SB-PRETTY::OUTPUT-LINE
+  88      0   0.0      1   4.2     42 175.0        -  SB-UNIX:UNIX-OPEN
+  89      0   0.0      1   4.2     42 175.0        -  SB-IMPL::UNPARSE-NATIVE-PHYSICAL-FILE
+  90      0   0.0      1   4.2     42 175.0        -  SB-IMPL::UNPARSE-NATIVE-UNIX-NAMESTRING
+  91      0   0.0      1   4.2     42 175.0        -  (SB-PCL::FAST-METHOD PRINT-OBJECT (FLOAT T))
+  92      0   0.0      1   4.2     42 175.0        -  (FLET "PPRINT-BLOCK" :IN SB-PRETTY::PPRINT-FUN-CALL)
+  93      0   0.0      1   4.2     42 175.0        -  SB-IMPL::REFILL-INPUT-BUFFER
+------------------------------------------------------------------------
+          0   0.0                                     elsewhere
+#+end_example
+
 ** Emacs Lisp
 The Emacs Lisp implementation is a single file in the root directory
 which mimicks the behavior of the Common Lisp implementation.
+
+#+name: sxp-el-make
+#+begin_src shell :results output replace :exports both
+make el
+#+end_src
+
+#+RESULTS: sxp-el-make
+: emacs --batch --eval '(native-compile "sxp.el")' --eval '(byte-compile-file "sxp.el")'
+
 ** TODO Rust
 The Rust reference implementation is located in the =rust= folder of
 this project. It leverages the serde ecosystem and includes a full
 test-suite as specified in the previous section.
-#+name: rust-loc
-#+begin_src sh :results replace output :exports both
-  cd rust && tokei -t=Rust
+#+name: sxp-rs-make
+#+begin_src shell :results replace output :exports both
+  make rs
 #+end_src
-
-#+RESULTS: rust-loc
-
-#+RESULTS:
-: ===============================================================================
-:  Language            Files        Lines         Code     Comments       Blanks
-: ===============================================================================
-:  Rust                   21         5550         5048          121          381
-:  |- Markdown            14          259           16          222           21
-:  (Total)                           5809         5064          343          402
-: ===============================================================================
-:  Total                  21         5550         5048          121          381
-: ===============================================================================
-
-#+name: rust-files
-#+begin_src shell :shebang #!/usr/bin/env nu :results output replace :exports both
-cd rust ; print "SRC FILES\n" ; ls src | print
-print "TEST FILES\n" ; ls tests | print
-#+end_src
-
-#+RESULTS: rust-files
-#+begin_example
-SRC FILES
-
-╭────┬──────────────┬──────┬──────────┬────────────────╮
-│  # │     name     │ type │   size   │    modified    │
-├────┼──────────────┼──────┼──────────┼────────────────┤
-│  0 │ src/de.rs    │ file │ 51.1 KiB │ 12 minutes ago │
-│  1 │ src/err.rs   │ file │ 12.3 KiB │ 2 hours ago    │
-│  2 │ src/fmt.rs   │ file │  8.5 KiB │ 27 minutes ago │
-│  3 │ src/form.rs  │ file │    406 B │ 4 days ago     │
-│  4 │ src/io.rs    │ file │    271 B │ 5 days ago     │
-│  5 │ src/iter.rs  │ file │  1.7 KiB │ a day ago      │
-│  6 │ src/lib.rs   │ file │  3.4 KiB │ 3 hours ago    │
-│  7 │ src/macs.rs  │ file │    289 B │ 3 hours ago    │
-│  8 │ src/nostd.rs │ file │  1.6 KiB │ 5 days ago     │
-│  9 │ src/read.rs  │ file │ 23.5 KiB │ 2 hours ago    │
-│ 10 │ src/ser.rs   │ file │ 22.9 KiB │ 2 hours ago    │
-│ 11 │ src/tok.rs   │ file │ 16.0 KiB │ 9 minutes ago  │
-╰────┴──────────────┴──────┴──────────┴────────────────╯
-
-TEST FILES
-
-╭───┬───────────────┬──────┬─────────┬─────────────╮
-│ # │     name      │ type │  size   │  modified   │
-├───┼───────────────┼──────┼─────────┼─────────────┤
-│ 0 │ tests/de.rs   │ file │ 2.8 KiB │ 2 hours ago │
-│ 1 │ tests/fmt.rs  │ file │ 1.4 KiB │ 2 days ago  │
-│ 2 │ tests/form.rs │ file │   150 B │ 2 hours ago │
-│ 3 │ tests/macs.rs │ file │     1 B │ 5 days ago  │
-│ 4 │ tests/ser.rs  │ file │ 1.6 KiB │ 2 hours ago │
-│ 5 │ tests/tok.rs  │ file │   638 B │ 2 hours ago │
-╰───┴───────────────┴──────┴─────────┴─────────────╯
-
-#+end_example
-
-#+RESULTS: rust-src-files
-#+begin_example
-╭────┬──────────┬──────┬──────────┬────────────────╮
-│  # │   name   │ type │   size   │    modified    │
-├────┼──────────┼──────┼──────────┼────────────────┤
-│  0 │ de.rs    │ file │ 51.1 KiB │ 9 minutes ago  │
-│  1 │ err.rs   │ file │ 12.3 KiB │ 2 hours ago    │
-│  2 │ fmt.rs   │ file │  8.5 KiB │ 25 minutes ago │
-│  3 │ form.rs  │ file │    406 B │ 4 days ago     │
-│  4 │ io.rs    │ file │    271 B │ 5 days ago     │
-│  5 │ iter.rs  │ file │  1.7 KiB │ a day ago      │
-│  6 │ lib.rs   │ file │  3.4 KiB │ 3 hours ago    │
-│  7 │ macs.rs  │ file │    289 B │ 3 hours ago    │
-│  8 │ nostd.rs │ file │  1.6 KiB │ 5 days ago     │
-│  9 │ read.rs  │ file │ 23.5 KiB │ 2 hours ago    │
-│ 10 │ ser.rs   │ file │ 22.9 KiB │ 2 hours ago    │
-│ 11 │ tok.rs   │ file │ 16.0 KiB │ 7 minutes ago  │
-╰────┴──────────┴──────┴──────────┴────────────────╯
-#+end_example
-
-*** tests
-#+name: rust-test
-#+begin_src shell :results output replace :shebang #!/usr/bin/env nu :exports both
-  cd rust
-  cargo test -vv --all-targets -j8 -- --nocapture
-#+end_src
-
-#+RESULTS: run-rust-tests
 
 *** examples
 **** udp
 This example shows a basic network example which used SXP as the data
 exchange format. You should run an instance of it in two separate
 terminals to see the effects of serialization.
-#+begin_src sh
-  cargo run --example udp 8765
-  # in another shell
-  cargo run --example udp 8766 8765
+#+name: sxp-rs-udp-example
+#+begin_src shell :results output replace :exports both
+  make rs-udp
 #+end_src
 
 #+begin_example
@@ -458,3 +930,4 @@ streams into an internal Tree representation.
 **** deserialization tests
 **** formatter tests
 **** macro tests
+** form vs forms

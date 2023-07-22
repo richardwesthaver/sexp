@@ -181,7 +181,7 @@ where
     F: FnOnce(&'s Self, &'s [u8]) -> Result<T>,
   {
     loop {
-      let ch = tri!(next_or_eof(self));
+      let ch = e!(next_or_eof(self));
       if !ESCAPE[ch as usize] {
         scratch.push(ch);
         continue;
@@ -191,7 +191,7 @@ where
           return result(self, scratch);
         }
         b'\\' => {
-          tri!(parse_escape(self, validate, scratch));
+          e!(parse_escape(self, validate, scratch));
         }
         _ => {
           if validate {
@@ -281,7 +281,7 @@ where
 
   fn ignore_str(&mut self) -> Result<()> {
     loop {
-      let ch = tri!(next_or_eof(self));
+      let ch = e!(next_or_eof(self));
       if !ESCAPE[ch as usize] {
         continue;
       }
@@ -290,7 +290,7 @@ where
           return Ok(());
         }
         b'\\' => {
-          tri!(ignore_escape(self));
+          e!(ignore_escape(self));
         }
         _ => {
           return error(self, ErrorCode::ControlCharacterWhileParsingString);
@@ -302,7 +302,7 @@ where
   fn decode_hex_escape(&mut self) -> Result<u16> {
     let mut n = 0;
     for _ in 0..4 {
-      match decode_hex_val(tri!(next_or_eof(self))) {
+      match decode_hex_val(e!(next_or_eof(self))) {
         None => return error(self, ErrorCode::InvalidEscape),
         Some(val) => {
           n = (n << 4) + val;
@@ -387,7 +387,7 @@ impl<'a> SliceRead<'a> {
         b'\\' => {
           scratch.extend_from_slice(&self.slice[start..self.index]);
           self.index += 1;
-          tri!(parse_escape(self, validate, scratch));
+          e!(parse_escape(self, validate, scratch));
           start = self.index;
         }
         _ => {
@@ -476,7 +476,7 @@ impl<'a> Read<'a> for SliceRead<'a> {
         }
         b'\\' => {
           self.index += 1;
-          tri!(ignore_escape(self));
+          e!(ignore_escape(self));
         }
         _ => {
           return error(self, ErrorCode::ControlCharacterWhileParsingString);
@@ -685,7 +685,7 @@ fn next_or_eof<'de, R>(read: &mut R) -> Result<u8>
 where
   R: ?Sized + Read<'de>,
 {
-  match tri!(read.next()) {
+  match e!(read.next()) {
     Some(b) => Ok(b),
     None => error(read, ErrorCode::EofWhileParsingString),
   }
@@ -695,7 +695,7 @@ fn peek_or_eof<'de, R>(read: &mut R) -> Result<u8>
 where
   R: ?Sized + Read<'de>,
 {
-  match tri!(read.peek()) {
+  match e!(read.peek()) {
     Some(b) => Ok(b),
     None => error(read, ErrorCode::EofWhileParsingString),
   }
@@ -721,7 +721,7 @@ fn parse_escape<'de, R: Read<'de>>(
   validate: bool,
   scratch: &mut Vec<u8>,
 ) -> Result<()> {
-  let ch = tri!(next_or_eof(read));
+  let ch = e!(next_or_eof(read));
 
   match ch {
     b'"' => scratch.push(b'"'),
@@ -741,7 +741,7 @@ fn parse_escape<'de, R: Read<'de>>(
         ]);
       }
 
-      let c = match tri!(read.decode_hex_escape()) {
+      let c = match e!(read.decode_hex_escape()) {
         n @ 0xDC00..=0xDFFF => {
           return if validate {
             error(read, ErrorCode::LoneLeadingSurrogateInHexEscape)
@@ -756,7 +756,7 @@ fn parse_escape<'de, R: Read<'de>>(
         // utf-8 string the surrogates are required to be paired,
         // whereas deserializing a byte string accepts lone surrogates.
         n1 @ 0xD800..=0xDBFF => {
-          if tri!(peek_or_eof(read)) == b'\\' {
+          if e!(peek_or_eof(read)) == b'\\' {
             read.discard();
           } else {
             return if validate {
@@ -768,7 +768,7 @@ fn parse_escape<'de, R: Read<'de>>(
             };
           }
 
-          if tri!(peek_or_eof(read)) == b'u' {
+          if e!(peek_or_eof(read)) == b'u' {
             read.discard();
           } else {
             return if validate {
@@ -785,7 +785,7 @@ fn parse_escape<'de, R: Read<'de>>(
             };
           }
 
-          let n2 = tri!(read.decode_hex_escape());
+          let n2 = e!(read.decode_hex_escape());
 
           if n2 < 0xDC00 || n2 > 0xDFFF {
             return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);
@@ -823,7 +823,7 @@ fn ignore_escape<'de, R>(read: &mut R) -> Result<()>
 where
   R: ?Sized + Read<'de>,
 {
-  let ch = tri!(next_or_eof(read));
+  let ch = e!(next_or_eof(read));
 
   match ch {
     b'"' | b'\\' | b'/' | b'b' | b'f' | b'n' | b'r' | b't' => {}
@@ -834,7 +834,7 @@ where
       // ultimately be parsed into a string or a byte buffer in the "real"
       // parse.
 
-      tri!(read.decode_hex_escape());
+      e!(read.decode_hex_escape());
     }
     _ => {
       return error(read, ErrorCode::InvalidEscape);

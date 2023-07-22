@@ -1,36 +1,4 @@
 //! lib.rs --- S-eXPressions.
-
-//! S-Expressions (S-Expr, sexp) are a flexible notation for tree-like
-//! data. SXP is an extension.
-
-//! * example
-
-//! ```rust
-//! use serde_derive::{Deserialize, Serialize};
-//! use sxp::to_string; // from_str
-//!
-//! #[derive(Debug, Serialize, Deserialize, PartialEq)]
-//! struct Item {
-//!     name: String,
-//!     source: String,
-//! }
-//!
-//! fn main() {
-//!     let src = r#"(:name "Banana" :source "Store")"#;
-//!     let should_be = Item {
-//!         name: "Banana".to_string(),
-//!         source: "Store".to_string(),
-//!     };
-//!
-//!     // let item: Item = from_str(src).unwrap();
-//!     // assert_eq!(item, should_be);
-//!
-//!     let reserialized_item = to_string(&should_be).unwrap();
-//!     assert_eq!(src, reserialized_item);
-//! }
-//! ```
-#![feature(type_alias_impl_trait)]
-#![allow(non_upper_case_globals)]
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
@@ -40,7 +8,7 @@ pub use err::{Error, Result};
 
 mod io;
 
-macro_rules! tri {
+macro_rules! e {
   ($e:expr $(,)?) => {
     match $e {
       core::result::Result::Ok(val) => val,
@@ -54,15 +22,15 @@ macro_rules! tri {
 //   from_reader, from_slice, from_str, from_traits, Deserializer,
 // };
 
-pub mod fmt;
+mod fmt;
+#[doc(inline)]
+pub use fmt::{DefaultFormatter, Formatter, ReadFormatter, WriteFormatter};
 pub mod form;
 pub mod iter;
 pub mod macs;
 pub mod read;
 pub mod ser;
 pub mod tok;
-#[doc(inline)]
-pub use fmt::{DefaultFormatter, Formatter};
 #[doc(inline)]
 pub use form::Form;
 #[doc(inline)]

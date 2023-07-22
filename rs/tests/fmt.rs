@@ -1,8 +1,7 @@
 use std::io::BufWriter;
-use sxp::{DefaultFormatter, Formatter};
-pub struct TestFormatter;
-impl Formatter for TestFormatter {}
+use sxp::{DefaultFormatter, WriteFormatter};
 
+pub struct TestFormatter;
 #[test]
 fn canonical_fmt() {
   let mut buf = vec![];

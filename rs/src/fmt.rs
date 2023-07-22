@@ -10,7 +10,7 @@ pub fn indent<W: ?Sized + io::Write>(
   s: &[u8],
 ) -> io::Result<()> {
   for _ in 0..n {
-    tri!(wr.write_all(s));
+    e!(wr.write_all(s));
   }
   Ok(())
 }

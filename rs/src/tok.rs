@@ -500,8 +500,8 @@ where
   W: ?Sized + Write,
   F: ?Sized + WriteFormatter,
 {
-  tri!(formatter.begin_string(writer));
-  tri!(format_escaped_str_contents(writer, formatter, value));
+  e!(formatter.begin_string(writer));
+  e!(format_escaped_str_contents(writer, formatter, value));
   formatter.end_string(writer)
 }
 
@@ -525,11 +525,11 @@ where
     }
 
     if start < i {
-      tri!(formatter.write_string_fragment(writer, &value[start..i]));
+      e!(formatter.write_string_fragment(writer, &value[start..i]));
     }
 
     let char_escape = CharEscape::from_escape_table(escape, byte);
-    tri!(formatter.write_char_escape(writer, char_escape));
+    e!(formatter.write_char_escape(writer, char_escape));
 
     start = i + 1;
   }
