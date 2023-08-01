@@ -2,14 +2,12 @@
 (defpackage :sxp
   (:use :cl)
   (:import-from :uiop :slurp-stream-forms :read-file-forms :with-output-file)
-  (:export :read-table :write-table :form :reader :writer :fmt :wrap :unwrap
+  (:import-from :named-readtables :defreadtable :in-readtable)
+  (:export :form :reader :writer :fmt :wrap :unwrap
 	   :define-macro :define-fmt :read-sxp-file :write-sxp-file
 	   :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
 	   :make-sxp :sxp :formp :form))
 (in-package :sxp)
-
-(defvar read-table (make-hash-table))
-(defvar write-table (make-hash-table))
 
 (defun formp (form)
   (or (consp form) (atom form)))
@@ -23,7 +21,7 @@
 (defclass sxp ()
   ;; will eventually not contain slots, abstract only class
   ;; implemented for objects.
-  ((ast :initarg :ast))
+  ((ast :initarg :ast :type form))
   (:documentation "loosely typed object representing a SXP form."))
 
 (defmethod wrap ((self sxp) form) (setf (slot-value self 'ast) form))
