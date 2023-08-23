@@ -1,9 +1,10 @@
-(defpackage :sxp-bench
-  (:use :cl :sxp :sb-ext :sb-unix)
-  (:export :run-bench :*bench-input-file* :*bench-input-string* :*bench-input-object*
-	   :*bench-output-directory* :*bench-iterations* :*bench-report-file*))
-(in-package :sxp-bench)
 (require :sb-sprof)
+(defpackage :sxp-bench
+  (:use :cl :sxp :sb-ext :sb-unix) ;:flamegraph
+  (:export :run-bench :*bench-input-file* :*bench-input-string* :*bench-input-object*
+	   :*bench-output-directory* :*bench-iterations* :*bench-report-file* ;:*bench-flamegraph-file*
+	   ))
+(in-package :sxp-bench)
 (declaim
  (type (or string pathname) *bench-input-file* *bench-output-directory* *bench-report-file*)
  (type string *bench-input-string*)
@@ -14,8 +15,8 @@
 (defparameter *bench-input-object* (sxp:read-sxp-string *bench-input-string*))
 (defparameter *bench-output-directory* "/tmp/sxp-bench")
 (defparameter *bench-iterations* 1000)
-(defparameter *bench-report-file* "report.sxp")
-
+(defparameter *bench-report-file* "bench.sxp")
+;; (defparameter *bench-flamegraph-file* "bench.stack")
 (defmacro bench (&body body)
   `(loop for i from 1 to *bench-iterations*
 	 do ,@body))
@@ -41,6 +42,6 @@
 	(progn
 	  (format t "Writing output to ~s" *bench-report-file*)
 	  (uiop:with-output-file (out *bench-report-file* :if-exists :supersede :if-does-not-exist :create)
-	    (print (list rres wres) out)))
+	    (print `(,@rres ,@wres) out)))
 	(print (list rres wres))))
   (terpri))

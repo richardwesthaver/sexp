@@ -3,7 +3,7 @@
   (:use :cl)
   (:import-from :uiop :slurp-stream-forms :read-file-forms :with-output-file)
   (:import-from :named-readtables :defreadtable :in-readtable)
-  (:export :form :reader :writer :fmt :wrap :unwrap
+  (:export :form :reader :writer :fmt :wrap :unwrap :validate
 	   :define-macro :define-fmt :read-sxp-file :write-sxp-file
 	   :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
 	   :make-sxp :sxp :formp :form))
@@ -26,7 +26,7 @@
 
 (defmethod wrap ((self sxp) form) (setf (slot-value self 'ast) form))
 (defmethod unwrap ((self sxp)) (slot-value self 'ast))
-
+(defmethod validate ((self sxp)))
 ;; (defsetf unwrap ) (defsetf wrap )
 
 (defun read-sxp-file (file)
