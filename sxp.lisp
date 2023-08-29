@@ -3,7 +3,7 @@
   (:use :cl)
   (:import-from :uiop :slurp-stream-forms :read-file-forms :with-output-file)
   (:import-from :named-readtables :defreadtable :in-readtable)
-  (:export :form :reader :writer :fmt :wrap :unwrap :validate
+  (:export :form :reader :writer :fmt :wrap :unwrap :unwrap! :unwrap-or :validate
 	   :define-macro :define-fmt :read-sxp-file :write-sxp-file
 	   :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
 	   :make-sxp :sxp :formp :form))
@@ -17,6 +17,8 @@
 
 (defgeneric wrap (sxp form))
 (defgeneric unwrap (sxp))
+(defgeneric unwrap! (sxp))
+(defgeneric unwrap-or (sxp lambda))
 
 (defclass sxp ()
   ;; will eventually not contain slots, abstract only class
@@ -26,6 +28,12 @@
 
 (defmethod wrap ((self sxp) form) (setf (slot-value self 'ast) form))
 (defmethod unwrap ((self sxp)) (slot-value self 'ast))
+(defmethod unwrap! ((self sxp)) (ignore-errors (slot-value self 'ast)))
+(defmethod unwrap-or ((self sxp) else-fn)
+  (if (slot-unbound self 'ast)
+      (slot-value self 'ast)
+      (if (null (slot-value self 'ast))
+	  (else-fn))))
 (defmethod validate ((self sxp)))
 ;; (defsetf unwrap ) (defsetf wrap )
 
