@@ -25,6 +25,6 @@ rs-udp:rs;cd rs && cargo run --example udp-async
 
 py:;cd py && poetry update && poetry build && poetry install
 
-el:;$(EL) --eval '(native-compile "sxp.el")' --eval '(byte-compile-file "sxp.el")'
+el:;$(EL) --eval '(byte-compile-file "sxp.el")' --eval '(native-compile "sxp.el")'
 
 clean:;rm -rf report.sxp *.fasl rs/target sxp.elc

@@ -3,6 +3,7 @@
 #+INFOJS_OPT: view:info toc:nil
 * Status
 + state :: WIP
+  - [2023-09-01 Fri] :: added as dependency to macs
 + todo ::
   - [-] Rust
     - [-] {lib,tests}.rs

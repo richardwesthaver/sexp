@@ -2,7 +2,8 @@
 (defpackage :sxp
   (:use :cl)
   (:import-from :uiop :slurp-stream-forms :read-file-forms :with-output-file)
-  (:import-from :named-readtables :defreadtable :in-readtable)
+  ;; TODO: hot-patch readtables into sxp classes/parsers
+  (:import-from :macs.readtables :defreadtable :in-readtable)
   (:export :form :reader :writer :fmt :wrap :unwrap :unwrap! :unwrap-or :validate
 	   :define-macro :define-fmt :read-sxp-file :write-sxp-file
 	   :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream

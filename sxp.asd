@@ -3,7 +3,7 @@
   :version "0.1.0"
   :author "ellis <ellis@rwest.io>"
   :maintainer "ellis <ellis@rwest.io>"
-  :depends-on ("named-readtables")
+  :depends-on ("macs/readtables")
   :description ""
   :homepage "https://rwest.io/sxp"
   :bug-tracker "https://lab.rwest.io/comp/sxp/issues"

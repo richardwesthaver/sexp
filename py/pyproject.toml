@@ -7,7 +7,7 @@ license = "WTF"
 readme = "readme.org"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 
 
 [build-system]
