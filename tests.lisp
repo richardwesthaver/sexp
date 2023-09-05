@@ -1,4 +1,5 @@
 ;;; tests.lisp --- SEXP tests
+;; TODO 2023-09-01: refactor to macs.rt
 (defpackage :sxp-tests
   (:use :cl :sxp :fiveam)
   (:export #:run-tests))

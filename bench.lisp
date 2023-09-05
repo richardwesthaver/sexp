@@ -1,6 +1,6 @@
 (require :sb-sprof)
 (defpackage :sxp-bench
-  (:use :cl :sxp :sb-ext :sb-unix) ;:flamegraph
+  (:use :cl :sxp :sb-ext :sb-unix)
   (:export :run-bench :*bench-input-file* :*bench-input-string* :*bench-input-object*
 	   :*bench-output-directory* :*bench-iterations* :*bench-report-file* ;:*bench-flamegraph-file*
 	   ))
