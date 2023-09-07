@@ -10,7 +10,6 @@
   :source-control "https://lab.rwest.io/comp/sxp"
   :license "WTF"
   :in-order-to ((test-op (test-op :sxp/tests)))
-  :build-pathname "sxp"
   :components ((:file "sxp")))
 
 (defmethod perform :after ((op load-op) (c (eql (find-system :sxp))))
