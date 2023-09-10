@@ -3,8 +3,8 @@
   :version "0.1.0"
   :author "ellis <ellis@rwest.io>"
   :maintainer "ellis <ellis@rwest.io>"
-  :depends-on ("macs/readtables")
-  :description ""
+  :depends-on ("macs")
+  :description "S-eXPressions"
   :homepage "https://rwest.io/sxp"
   :bug-tracker "https://lab.rwest.io/comp/sxp/issues"
   :source-control "https://lab.rwest.io/comp/sxp"
