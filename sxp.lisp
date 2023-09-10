@@ -9,9 +9,10 @@
   ;; TODO: hot-patch readtables into sxp classes/parsers
   (:import-from :macs.readtables :defreadtable :in-readtable)
   (:export :form :reader :writer :fmt :wrap :unwrap :unwrap! :unwrap-or :sxpp
+	   :build-ast :load-ast
 	   :define-macro :define-fmt :read-sxp-file :write-sxp-file
 	   :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
-	   :make-sxp :sxp :formp :form :wrap-object))
+	   :make-sxp :sxp :formp :form :wrap-object :unwrap-object))
 (in-package :sxp)
 
 ;;; Utils
@@ -28,9 +29,12 @@
 (defgeneric unwrap-or (self lambda))
 (defgeneric sxpp (self form))
 
-(defgeneric internalize (self)
-  (:documentation "internalize the sxp representation of SELF and store it in the :ast
+(defgeneric build-ast (self)
+  (:documentation "build the sxp representation of SELF and store it in the :ast
 slot. The :ast slot is always ignored."))
+
+(defgeneric load-ast (self)
+  (:documentation "load the object SELF from the :ast slot."))
 
 ;;; Objects
 (defclass sxp ()
@@ -91,16 +95,17 @@ non-nil, also include indirect (parent) methods."
 	   (car (member s (specializer-direct-generic-functions class) :key #'generic-function-name)))
 	 methods))))
 
+;; TODO 2023-09-09: slot exclusion from dynamic var
 (defun list-slots (class slots)
-  (when slots
+  (let ((cs (remove-if (lambda (s) (eq (slot-definition-name s) 'ast)) (class-slots class))))
     (if (eq slots t)
-	(class-slots class)
+	cs
 	(mapcar
-	 (lambda (s) (car (member s (class-slots class) :key #'slot-definition-name)))
+	 (lambda (s) (car (member s cs :key #'slot-definition-name)))
 	 slots))))
     
-(defun wrap-object (obj &key (slots t) (methods t) (indirect nil) (tag nil))
-  "Build and return a sxp from OBJ.
+(defun unwrap-object (obj &key (slots t) (methods t) (indirect nil) (tag nil))
+  "Build and return a form from OBJ.
 
 SLOTS specifies the slots to be included in the output. If the value
 is t, all slots are included.
@@ -124,6 +129,8 @@ output. If TAG is t, use the class-name symbol."
     (when methods (setf res (cons res methods)))
     (when tag (setf res (if (eq t tag) (cons (class-name class) res) (cons tag res))))
     res))
+
+(defun wrap-object (class form))
 
 ;; (defmacro define-fmt ())
 ;; (defmacro define-macro ())
