@@ -4,7 +4,8 @@
 
 ;;; Code:
 (defpackage :sxp
-  (:use :cl :sb-mop :uiop :sym :fu :reexport)
+  (:use :cl :sb-mop :sym :fu :reexport)
+  (:import-from :uiop :read-file-forms :slurp-stream-forms)
   ;; TODO: hot-patch readtables into sxp classes/parsers
   (:import-from :macs.readtables :defreadtable :in-readtable)
   (:export
@@ -18,8 +19,6 @@
    :wrap-object :unwrap-object))
 
 (in-package :sxp)
-
-(reexport-from :uiop/stream :include '(read-file-form read-file-forms slurp-stream-forms))
 
 (defun formp (form)
   (or (consp form) (atom form)))
