@@ -4,14 +4,13 @@
 
 ;;; Code:
 (defpackage :sxp
-  (:use :cl :sb-mop :sym :fu)
-  (:import-from :uiop :slurp-stream-forms :read-file-forms :with-output-file)
+  (:use :cl :sb-mop :uiop :sym :fu :reexport)
   ;; TODO: hot-patch readtables into sxp classes/parsers
   (:import-from :macs.readtables :defreadtable :in-readtable)
   (:export
-   :form :sxp-error :sxp-fmt-error :sxp-syntax-error :reader :writer :fmt
+   :form :formp :sxp-error :sxp-fmt-error :sxp-syntax-error :reader :writer :fmt
    :wrap :unwrap :unwrap! :unwrap-or
-   :sxpp :build-ast :load-ast
+   :sxpp :build-ast :load-ast :ast
    :define-macro :define-fmt :read-sxp-file :write-sxp-file
    :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
    :make-sxp :sxp :formp :form
@@ -20,10 +19,15 @@
 
 (in-package :sxp)
 
-;;; Utils
+(reexport-from :uiop/stream :include '(read-file-form read-file-forms slurp-stream-forms))
+
+(defun formp (form)
+  (or (consp form) (atom form)))
+
 (deftype form ()
   '(satisfies formp))
 
+;;; Conditions
 (define-condition sxp-error (error) ())
 
 (define-condition sxp-fmt-error (sxp-error)
@@ -50,7 +54,7 @@ slot. The :ast slot is always ignored."))
 
 ;;; Objects
 (defclass sxp ()
-  ((ast :initarg :ast :type form))
+  ((ast :initarg :ast :type form :accessor ast))
   (:documentation "Dynamic class representing a SXP form."))
 
 (defmethod wrap ((self sxp) form) (setf (slot-value self 'ast) form))
@@ -67,10 +71,6 @@ slot. The :ast slot is always ignored."))
 
 ;; (defsetf unwrap ) (defsetf wrap )
 
-;;; Prototypes
-(defstruct sxp-object-prototype
-  )
-(make-sxp-object-prototype)
 ;;; Functions
 (defun read-sxp-stream (stream)
   (make-instance 'sxp :ast (slurp-stream-forms stream :count nil)))
@@ -186,8 +186,7 @@ CLASS. FORM is assumed to be the finalized lisp object which has
 already passed through `read' -- not a string or file-stream for
 example."
   (declare (type class class)
-	   (type form form))
-	)
+	   (type form form)))
 
 ;; (defmacro define-fmt ())
 ;; (defmacro define-macro ())
