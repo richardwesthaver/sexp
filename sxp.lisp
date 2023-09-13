@@ -5,7 +5,7 @@
 ;;; Code:
 (defpackage :sxp
   (:use :cl :sb-mop :sym :fu :reexport)
-  (:import-from :uiop :read-file-forms :slurp-stream-forms)
+  (:import-from :uiop :read-file-forms :slurp-stream-forms :with-output-file)
   ;; TODO: hot-patch readtables into sxp classes/parsers
   (:import-from :macs.readtables :defreadtable :in-readtable)
   (:export
@@ -15,7 +15,6 @@
    :define-macro :define-fmt :read-sxp-file :write-sxp-file
    :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
    :make-sxp :sxp :formp :form
-   :list-slot-values-using-class :list-class-methods :list-class-slots :list-indirect-slot-methods
    :wrap-object :unwrap-object))
 
 (in-package :sxp)
@@ -92,55 +91,6 @@ slot. The :ast slot is always ignored."))
 (defun write-sxp-string (sxp) (write-to-string (slot-value sxp 'ast)))
 
 (defmacro make-sxp (&optional &rest form) `(make-instance 'sxp ,@(when form `(:ast ',form))))
-
-(defun list-indirect-class-methods (class)
-  "List all indirect methods of CLASS."
-  (remove-duplicates (mapcan #'specializer-direct-generic-functions (compute-class-precedence-list class))))
-
-(defun list-class-methods (class methods &optional indirect)
-  "List all methods specializing on CLASS modulo METHODS. When INDIRECT is
-non-nil, also include indirect (parent) methods."
-  (if (eq methods t)
-      (if indirect
-	  (list-indirect-class-methods class)
-	  (specializer-direct-generic-functions class))
-      (mapcar
-       (lambda (s)
-	 (car (member s (specializer-direct-generic-functions class) :key #'generic-function-name)))
-       methods)))
-
-;; TODO 2023-09-09: slot exclusion from dynamic var
-(defun list-class-slots (class slots)
-  ;; should probably convert slot-definition-name here
-  (let ((cs (remove-if
-	     (lambda (s) (or
-			  (null s)
-			  (eq (slot-definition-name s) 'sxp::ast)))
-	     (class-slots class))))
-    (if (eq slots t)
-	cs
-	(loop for s in slots
-	      with sn = (symb s)
-	      for c in cs
-	      with cn = (symb (slot-definition-name c))
-	      when (eq sn cn)
-		collect c))))
-
-(defun list-slot-values-using-class (class obj slots &optional nullp unboundp)
-  (remove-if
-   #'null
-   (mapcar
-    (lambda (s)
-      (let ((n (slot-definition-name s)))
-	(let ((ns (make-keyword (symbol-name n))))
-	  (if (slot-boundp-using-class class obj s)
-	      (let ((v (slot-value-using-class class obj s)))
-		(if nullp
-		    (cons ns v)
-		    (unless (null v)
-		      (cons ns v))))
-	      (when unboundp (list ns))))))
-    slots)))
 
 (defun unwrap-object (obj &key (slots t) (methods nil)
 			    (indirect nil) (tag nil)
