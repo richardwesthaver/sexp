@@ -43,7 +43,10 @@
 (defgeneric unwrap-or (self lambda))
 (defgeneric sxpp (self form))
 
-(defgeneric build-ast (self)
+(defgeneric write-sxp-stream (self stream &key pretty case))
+(defgeneric read-sxp-stream (self stream))
+
+(defgeneric build-ast (self &key &allow-other-keys)
   (:documentation "build the sxp representation of SELF and store it in the :ast
 slot. The :ast slot is always ignored."))
 
@@ -67,26 +70,26 @@ slot. The :ast slot is always ignored."))
       (if (null (slot-value self 'ast))
 	  (funcall else-fn))))
 
-;; (defsetf unwrap ) (defsetf wrap )
-
-;;; Functions
-(defun read-sxp-stream (stream)
-  (make-instance 'sxp :ast (slurp-stream-forms stream :count nil)))
-
-(defun read-sxp-file (file)
-  (make-instance 'sxp :ast (read-file-forms file)))
-
-(defun write-sxp-stream (sxp stream &key (pretty *print-pretty*) (case :downcase))
-  (write (slot-value sxp 'ast)
+(defmethod write-sxp-stream ((self sxp) stream &key (pretty *print-pretty*) (case :downcase))
+  (write (ast self)
 	 :stream stream
 	 :pretty pretty
 	 :case case))
+
+(defmethod read-sxp-stream ((self sxp) stream)
+  (setf (ast self) (slurp-stream-forms stream :count nil)))
+
+;; (defsetf unwrap ) (defsetf wrap )
+
+;;; Functions
+(defun read-sxp-file (file)
+  (make-instance 'sxp :ast (read-file-forms file)))
 
 (defun write-sxp-file (sxp file &optional &key if-exists)
   (with-output-file (out file) :if-exists if-exists
     (write-sxp-stream (slot-value sxp 'ast) out)))
 
-(defun read-sxp-string (str) (with-input-from-string (s str) (read-sxp-stream s)))
+(defun read-sxp-string (self str) (with-input-from-string (s str) (read-sxp-stream self s)))
 
 (defun write-sxp-string (sxp) (write-to-string (slot-value sxp 'ast)))
 
@@ -94,7 +97,8 @@ slot. The :ast slot is always ignored."))
 
 (defun unwrap-object (obj &key (slots t) (methods nil)
 			    (indirect nil) (tag nil)
-			    (unboundp nil) (nullp nil))
+			    (unboundp nil) (nullp nil)
+			    (exclude nil))
   "Build and return a new `form' from OBJ by traversing the class
 definition. This differs from the generic function `unwrap' which
 always uses the ast slot as an internal buffer. We can also call this
@@ -113,21 +117,23 @@ output. If TAG is t, use the class-name symbol."
 	   (type (or list boolean) slots)
 	   (type (or list boolean) methods)
 	   (type boolean indirect)
-	   (ignorable indirect))
+	   (type list exclude))
   (unless (or slots methods)
     (error "Required one missing key arg: SLOTS or METHODS"))
   (let* ((class (class-of obj))
 	(res (when tag (list (if (eq t tag) (class-name class) tag)))))
     (block unwrap
       (when-let ((slots (when slots
-			  (list-class-slots class slots))))
+			  (list-class-slots class slots exclude))))
 	(let ((slot-vals (list-slot-values-using-class class obj (remove-if #'null slots) nullp unboundp)))
 	  (if methods
 	      (push slot-vals res)
 	      (return-from unwrap (push slot-vals res)))))
       (when-let ((methods (when methods (list-class-methods class methods indirect))))
 	(push methods res)))
-    (flatten (nreverse res))))
+    (if (= (length res) 1)
+	(car res)
+	res)))
 
 (defun wrap-object (class form)
   "Given a CLASS prototype and an input FORM, return a new instance of
