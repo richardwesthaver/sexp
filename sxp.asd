@@ -19,7 +19,7 @@
   :depends-on ("sxp" "macs/rt" "uiop")
   :components ((:file "tests"))
   :perform (test-op (op c)
-		    (uiop:symbol-call '#:sxp-tests '#:run-tests)))
+		    (uiop:symbol-call '#:macs.rt '#:do-tests)))
 
 (defsystem "sxp/bench"
   :depends-on ("sxp" "uiop" "sb-sprof" "flamegraph")

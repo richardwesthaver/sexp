@@ -152,6 +152,48 @@ also provided using the =esrap= parsing library.
 make cl-test
 #+end_src
 
+#+RESULTS: sxp-cl-tests
+#+begin_example
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(asdf:compile-system :sxp)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+sbcl --noinform --non-interactive --eval '(asdf:load-asd "sxp.asd")' --eval '(ql:quickload :sxp)'  --eval '(ql:quickload :sxp/tests)' --eval '(asdf:test-system :sxp)'
+To load "sxp":
+  Load 1 ASDF system:
+    sxp
+; Loading "sxp"
+
+To load "sxp/tests":
+  Load 1 ASDF system:
+    sxp/tests
+; Loading "sxp/tests"
+
+in suite SXP with 4/4 tests:
+((foo 'bar `("test" ,baz ,@qux) 123 0.0123 1/3 `(,a1 ,a2)))
+#S(MACS.RT::TEST-RESULT
+   :TAG :PASS
+   :FORM #S(MACS.RT::TEST-RESULT
+            :TAG :PASS
+            :FORM (SXP:WRITE-SXP-STREAM SXP-TESTS::F NIL))) 
+#S(MACS.RT::TEST-RESULT
+   :TAG :PASS
+   :FORM #S(MACS.RT::TEST-RESULT
+            :TAG :PASS
+            :FORM (STRINGP (SXP:WRITE-SXP-STRING SXP-TESTS::F)))) 
+#S(MACS.RT::TEST-RESULT
+   :TAG :PASS
+   :FORM #S(MACS.RT::TEST-RESULT
+            :TAG :PASS
+            :FORM (EQUAL (SXP:UNWRAP SXP-TESTS::F) (SXP:UNWRAP SXP-TESTS::F)))) 
+#S(MACS.RT::TEST-RESULT
+   :TAG :PASS
+   :FORM #S(MACS.RT::TEST-RESULT :TAG :PASS :FORM (SXP:FORMP T))) 
+No tests failed.
+#+end_example
+
 #+name: sxp-cl-bench
 #+begin_src shell :results output replace
 make cl-bench
