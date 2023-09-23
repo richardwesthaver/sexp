@@ -8,15 +8,18 @@
 (declaim
  (type (or string pathname) *test-file*)
  (type string *test-string*))
-(defparameter *test-file* #p"tests.sxp")
-(defparameter *test-string* "(foo 'bar `(\"test\" ,baz ,@qux) 123 0.0123 1/3 `(,a1 ,a2))")
+(defparameter *test-file* "tests.sxp")
+(defparameter *test-string* "(FOO 'BAR `(\"test\" ,BAZ ,@QUX) 123 0.0123 1/3 `(,A1 ,A2))")
 
 (defsuite :sxp)
 (in-suite :sxp)
 
 (deftest forms ()
   (is (formp nil))
-  (is (formp t)))
+  (is (formp t))
+  (is (formp 3.14))
+  (is (formp "string"))
+  (is (formp 3.14)))
 
 (deftest sxp-file ()
   (let ((f (read-sxp-file *test-file*)))
@@ -25,7 +28,7 @@
 (deftest sxp-string ()
   (let ((f (make-instance 'sxp)))
     (is (formp (read-sxp-string f *test-string*)))
-    (is (stringp (write-sxp-string f)))))
+    (is (equalp (read-from-string (write-sxp-string f)) (read-from-string *test-string*)))))
 
 (deftest sxp-stream ()
   (let ((f (make-instance 'sxp)))

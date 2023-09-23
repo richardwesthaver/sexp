@@ -91,9 +91,13 @@ slot. The :ast slot is always ignored."))
 
 (defun read-sxp-string (self str) (with-input-from-string (s str) (read-sxp-stream self s)))
 
-(defun write-sxp-string (sxp) (write-to-string (slot-value sxp 'ast)))
+(defun write-sxp-string (sxp) 
+  (let ((ast (ast sxp)))
+    (if (> (length ast) 1)
+	(write-to-string ast)
+	(write-to-string (car ast)))))
 
-(defmacro make-sxp (&optional &rest form) `(make-instance 'sxp ,@(when form `(:ast ',form))))
+(defmacro make-sxp (&optional &rest form) `(make-instance 'sxp ,@(when form `(:ast ',@form))))
 
 (defun unwrap-object (obj &key (slots t) (methods nil)
 			    (indirect nil) (tag nil)
