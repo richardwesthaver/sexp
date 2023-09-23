@@ -1,10 +1,10 @@
 ;;; tests.lisp --- SEXP tests
 ;; TODO 2023-09-01: refactor to macs.rt
 (defpackage :sxp-tests
-  (:use :cl :sxp :rt)
+  (:use :cl :sxp :macs :rt)
   (:export #:run-tests))
 (in-package :sxp-tests)
-
+(in-readtable *macs-readtable*)
 (declaim
  (type (or string pathname) *test-file*)
  (type string *test-string*))
@@ -19,7 +19,8 @@
   (is (formp t))
   (is (formp 3.14))
   (is (formp "string"))
-  (is (formp 3.14)))
+  (is (formp (mapc #`(',a1) '(a))))
+  (is (formp ())))
 
 (deftest sxp-file ()
   (let ((f (read-sxp-file *test-file*)))
