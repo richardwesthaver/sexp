@@ -22,6 +22,8 @@
 
 ;; Emacs Support for S-Expression files (.sxp).
 
+;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Parsing-Expressions.html
+
 ;;; Code:
 (define-derived-mode sxp-mode lisp-data-mode "S-Expr"
   "Major mode for editing '.sxp' files.")

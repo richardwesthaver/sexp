@@ -3,14 +3,15 @@
 ;; sxp is a unified S-Expression data format
 
 ;;; Code:
-(defpackage :sxp
-  (:use :cl :sb-mop :sym :fu :reexport)
+(pkg:defpkg :sxp
+  (:use :cl :sb-mop :sym :fu :macs)
   (:import-from :uiop :read-file-forms :slurp-stream-forms :with-output-file)
   ;; TODO: hot-patch readtables into sxp classes/parsers
-  (:import-from :macs.readtables :defreadtable :in-readtable)
+  (:import-from :readtables :defreadtable :in-readtable)
   (:export
+   :sxp-fmt-designator
    :form :formp :sxp-error :sxp-fmt-error :sxp-syntax-error :reader :writer :fmt
-   :wrap :unwrap :unwrap! :unwrap-or
+   :wrap :wrap! :wrap-from-string! :unwrap :unwrap! :unwrap-or
    :sxpp :build-ast :load-ast :ast
    :define-macro :define-fmt :read-sxp-file :write-sxp-file
    :read-sxp-string :write-sxp-string :read-sxp-stream :write-sxp-stream
@@ -38,6 +39,8 @@
 
  ;;; Protocol
 (defgeneric wrap (self form))
+(defgeneric wrap! (self form))
+(defgeneric wrap-from-string! (self str))
 (defgeneric unwrap (self))
 (defgeneric unwrap! (self))
 (defgeneric unwrap-or (self lambda))
@@ -57,6 +60,10 @@ slot. The :ast slot is always ignored."))
 (defclass sxp ()
   ((ast :initarg :ast :type form :accessor ast))
   (:documentation "Dynamic class representing a SXP form."))
+
+(defmethod wrap! ((self sxp) form) (setf (slot-value self 'ast) (ignore-errors form)))
+
+(defmethod wrap-from-string! ((self sxp) str) (setf (slot-value self 'ast) (ignore-errors (read str))))
 
 (defmethod wrap ((self sxp) form) (setf (slot-value self 'ast) form))
 
@@ -87,7 +94,7 @@ slot. The :ast slot is always ignored."))
 
 (defun write-sxp-file (sxp file &optional &key if-exists)
   (with-output-file (out file) :if-exists if-exists
-    (write-sxp-stream (slot-value sxp 'ast) out)))
+    (write-sxp-stream sxp out)))
 
 (defun read-sxp-string (self str) (with-input-from-string (s str) (read-sxp-stream self s)))
 
@@ -97,7 +104,9 @@ slot. The :ast slot is always ignored."))
 	(write-to-string ast)
 	(write-to-string (car ast)))))
 
-(defmacro make-sxp (&optional &rest form) `(make-instance 'sxp ,@(when form `(:ast ',@form))))
+(defun make-sxp (&rest form) (make-instance 'sxp :ast form))
+
+(deftype sxp-fmt-designator () '(member :canonical :collapsed)) 
 
 (defun unwrap-object (obj &key (slots t) (methods nil)
 			    (indirect nil) (tag nil)
@@ -135,9 +144,7 @@ output. If TAG is t, use the class-name symbol."
 	      (return-from unwrap (push slot-vals res)))))
       (when-let ((methods (when methods (list-class-methods class methods indirect))))
 	(push methods res)))
-    (if (= (length res) 1)
-	(car res)
-	res)))
+    (flatten res)))
 
 (defun wrap-object (class form)
   "Given a CLASS prototype and an input FORM, return a new instance of
@@ -149,3 +156,5 @@ example."
 
 ;; (defmacro define-fmt ())
 ;; (defmacro define-macro ())
+
+(provide :sxp)
